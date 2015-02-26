@@ -18,8 +18,8 @@ var App = React.createClass({
             console.log('clicked')
         }
 
-        function arrowClick(){
-            console.log('arrow click')
+        function arrowClick(pressed, index){
+            console.log(pressed, index)
         }
 
         var items = [
@@ -34,9 +34,17 @@ var App = React.createClass({
         var x
         return (
             <div className="App" style={{padding: 10}}>
-                <Group defaultPressedIndex={1} style={{width: 230}}>
+                <Button onToggle={arrowClick} label="test me"></Button>
+                <Group defaultPressedIndex={1} orientation="vertical" style={{borderRadius: 4}}>
                     <SplitButton label="hello world!" commonStyle={{color: 'red'}} fn={clicked} arrowPosition='left' onArrowClick={arrowClick}>
+                    </SplitButton>
+                    <Button onToggle={arrowClick}>test me</Button>
+                    <SplitButton items={items} label="choose 2"></SplitButton>
 
+                </Group>
+
+                <Group defaultPressedIndex={1}>
+                    <SplitButton label="hello world!" commonStyle={{color: 'red'}} fn={clicked} arrowPosition='left' onArrowClick={arrowClick}>
                     </SplitButton>
                     <Button onToggle={arrowClick}>test me</Button>
                     <SplitButton items={items} label="choose 2"></SplitButton>
