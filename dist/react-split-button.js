@@ -82,7 +82,10 @@ return /******/ (function(modules) { // webpackBootstrap
 					border   : '1px solid rgb(218, 218, 218)',
 					boxSizing: 'border-box',
 					display  : 'inline-flex',
-					flexFlow : 'row'
+					flexFlow : 'row',
+					verticalAlign: 'top',
+
+					margin: 2
 				},
 				manageBorder: true,
 				manageRadius: true,
@@ -107,6 +110,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		prepareProps: function(thisProps, state) {
 			var props = assign({}, thisProps)
 
+			props.horizontal = props.orientation != 'vertical'
+
 			var pressedIndex = props.pressedIndex != null?
 								props.pressedIndex:
 								state.defaultPressedIndex
@@ -123,7 +128,20 @@ return /******/ (function(modules) { // webpackBootstrap
 		},
 
 		prepareStyle: function(props, state) {
-			var style = assign({}, props.defaultStyle, props.style)
+
+			var defaultStyle = props.defaultStyle
+
+			if (!props.horizontal){
+				defaultStyle = assign({}, defaultStyle, {
+					flexFlow: 'column'
+				})
+			}
+
+			if (props.block){
+				defaultStyle.display = 'flex'
+			}
+
+			var style = assign({}, defaultStyle, props.style)
 
 			if (style.border == ''){
 				style.border = null
@@ -169,19 +187,27 @@ return /******/ (function(modules) { // webpackBootstrap
 			var bottomRightRadius = propsStyle.borderBottomRightRadius == null? propsStyle.borderRadius: propsStyle.borderBottomRightRadius
 
 			var borderStyle = {
-				borderLeft: 0,
-				borderTop: borderTop,
-				borderBottom: borderBottom,
-				borderRight: 0,
-				border: 0
+				borderLeft  : 0,
+				borderTop   : 0,
+				borderBottom: 0,
+				borderRight : 0,
+				border      : 0
+			}
+
+			if (props.horizontal){
+				borderStyle.borderTop    = borderTop
+				borderStyle.borderBottom = borderBottom
+			} else {
+				borderStyle.borderLeft  = borderLeft
+				borderStyle.borderRight = borderRight
 			}
 
 			var radiusStyle = {
-				borderRadius: 0,
-				borderTopLeftRadius: 0,
-				borderTopRightRadius: 0,
+				borderRadius           : 0,
+				borderTopLeftRadius    : 0,
+				borderTopRightRadius   : 0,
 				borderBottomRightRadius: 0,
-				borderBottomLeftRadius: 0
+				borderBottomLeftRadius : 0
 			}
 
 			var newStyle = {
@@ -189,18 +215,32 @@ return /******/ (function(modules) { // webpackBootstrap
 			}
 
 			if (!index){
-				radiusStyle.borderTopLeftRadius    = topLeftRadius
-				radiusStyle.borderBottomLeftRadius = bottomLeftRadius
+				if (props.horizontal){
+					radiusStyle.borderTopLeftRadius    = topLeftRadius
+					radiusStyle.borderBottomLeftRadius = bottomLeftRadius
+				} else {
+					radiusStyle.borderTopLeftRadius  = topLeftRadius
+					radiusStyle.borderTopRightRadius = topRightRadius
+				}
 			}
 
 			if (index == count - 1){
-				radiusStyle.borderTopRightRadius    = topRightRadius
-				radiusStyle.borderBottomRightRadius = bottomRightRadius
-
-				borderStyle.borderRight = borderRight
+				if (props.horizontal){
+					radiusStyle.borderTopRightRadius    = topRightRadius
+					radiusStyle.borderBottomRightRadius = bottomRightRadius
+					borderStyle.borderRight = borderRight
+				} else {
+					radiusStyle.borderBottomLeftRadius    = bottomLeftRadius
+					radiusStyle.borderBottomRightRadius = bottomRightRadius
+					borderStyle.borderBottom = borderBottom
+				}
 			}
 
-			borderStyle.borderLeft = borderLeft
+			if (props.horizontal){
+				borderStyle.borderLeft = borderLeft
+			} else {
+				borderStyle.borderTop = borderTop
+			}
 
 			if (props.manageBorder){
 				assign(newStyle, borderStyle)
@@ -214,7 +254,8 @@ return /******/ (function(modules) { // webpackBootstrap
 			var buttonStyle = assign({}, props.defaultCommonStyle, button.props.style, newStyle, props.commonStyle)
 
 			var newProps = {
-				style: buttonStyle
+				style: buttonStyle,
+				renderMenu: this.props.renderMenu
 			}
 
 			if (props.pressedIndex != null){
@@ -249,7 +290,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	})
 
-	ButtonGroup.Button = Button
+	ButtonGroup.Button      = Button
 	ButtonGroup.SplitButton = SplitButton
 
 	module.exports = ButtonGroup
@@ -372,11 +413,11 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/** @jsx React.DOM */'use strict';
+	'use strict';
 
 	var React     = __webpack_require__(1)
-	var assign    = __webpack_require__(9)
-	var normalize = __webpack_require__(10)
+	var assign    = __webpack_require__(6)
+	var normalize = __webpack_require__(7)
 
 	function emptyFn(){}
 
@@ -394,11 +435,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	})()
 
-	var PropTypes = React.PropTypes
+	var PropTypes    = React.PropTypes
+	var DISPLAY_NAME = 'ReactButton'
 
 	module.exports = React.createClass({
 
-	    displayName: 'ReactButton',
+	    displayName: DISPLAY_NAME,
 
 	    propTypes: {
 	        fn: PropTypes.func,
@@ -428,22 +470,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	    getDefaultProps: function() {
 	        return {
 	            isReactButton: true,
+	            'data-display-name': DISPLAY_NAME,
 
-	            align: 'left',
+	            align: 'center',
+
+	            themed: true,
 
 	            defaultStyle: {
-	                display   : 'inline-flex',
-	                userSelect: 'none',
-	                alignItems: 'center',
-	                boxSizing : 'border-box',
+	                boxSizing     : 'border-box',
+
+	                display       : 'inline-flex',
+	                alignItems    : 'center',
+	                justifyContent: 'center',
+
+	                userSelect    : 'none',
 	                textDecoration: 'none',
-	                cursor   : 'pointer',
+	                cursor        : 'pointer',
+	                overflow      : 'hidden',
 
 	                //theme properties
-	                padding  : 5,
-	                margin   : 2,
-	                border   : '1px solid rgb(218, 218, 218)',
-	                color: 'rgb(120, 120, 120)',
+	                //fontFamily: 'Arial',
+	                // fontSize  : '0.9em',
+	                whiteSpace: 'nowrap',
+	                padding   : 5,
+	                margin    : 2
+	            },
+
+	            defaultThemeStyle: {
+	                border    : '1px solid rgb(218, 218, 218)',
+	                color     : 'rgb(120, 120, 120)',
 	            },
 
 	            defaultPrimaryStyle: {
@@ -481,12 +536,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            defaultLabelStyle: {
 	                display: 'inline-block'
 	            },
+
 	            ellipsisLabelStyle: {
 	                textOverflow: 'ellipsis',
 	                overflow: 'hidden',
 	                whiteSpace: 'nowrap'
 	            },
+
 	            ellipsis: true,
+
 	            href: ''
 	        }
 	    },
@@ -680,6 +738,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            )
 	        }
 
+	        if (typeof this.props.renderChildren === 'function'){
+	            return this.props.renderChildren(children)
+	        }
+
 	        return children
 	    },
 
@@ -720,44 +782,78 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var style = {}
 	        var defaultStyle = assign({}, props.defaultStyle)
 
+	        if (props.themed){
+	            assign(defaultStyle, props.defaultThemeStyle)
+	        }
+
+	        if (props.block){
+	            defaultStyle.display = 'flex'
+	        }
+
 	        defaultStyle.justifyContent = ALIGN(props.align)
 
-	        assign(style, defaultStyle, props.style)
+	        //defaultStyle
+	        assign(style, defaultStyle)
+
+	        if (props.themed){
+
+	            if (props.disabled){
+	                assign(style,
+	                    props.defaultDisabledStyle,
+	                    props.primary && props.defaultDisabledPrimaryStyle
+	                )
+	            } else {
+	                assign(style,
+	                    //DEFAULTS
+	                    props.focused   && props.defaultFocusedStyle,
+	                    props.primary   && props.defaultPrimaryStyle,
+	                    props.mouseOver && props.defaultOverStyle,
+	                    props.pressed   && props.defaultPressedStyle,
+	                    props.active    && props.defaultActiveStyle
+	                )
+
+	                assign(style,
+	                    //combinations
+	                    props.mouseOver && props.primary && props.defaultOverPrimaryStyle,
+	                    props.pressed   && props.primary && props.defaultPressedPrimaryStyle,
+	                    props.mouseOver && props.pressed && props.defaultOverPressedStyle
+	                )
+	            }
+	        }
+
+	        ;(props.onDefaultStylesApplied || emptyFn)(style)
+	        ;(props.onDefaultStyleReady    || emptyFn)(style)
+
+	        //style
+	        assign(style, props.style)
 
 	        if (props.disabled){
 	            assign(style,
-	                props.defaultDisabledStyle,
-	                props.primary && props.defaultDisabledPrimaryStyle,
-
 	                props.disabledStyle,
 	                props.primary && props.disabledPrimaryStyle
 	            )
 
 	        } else {
 	            assign(style,
-	                //DEFAULTS
-	                props.focused   && props.defaultFocusedStyle,
-	                props.primary   && props.defaultPrimaryStyle,
-	                props.mouseOver && props.defaultOverStyle,
-	                props.pressed   && props.defaultPressedStyle,
-	                props.active    && props.defaultActiveStyle,
-	                //combinations
-	                props.mouseOver && props.primary && props.defaultOverPrimaryStyle,
-	                props.pressed   && props.primary && props.defaultPressedPrimaryStyle,
-	                props.mouseOver && props.pressed && props.defaultOverPressedStyle,
-
 	                //NON-DEFAULTS
 	                props.focused   && props.focusedStyle,
 	                props.primary   && props.primaryStyle,
 	                props.mouseOver && props.overStyle,
 	                props.pressed   && props.pressedStyle,
-	                props.active    && props.activeStyle,
+	                props.active    && props.activeStyle
+	            )
+
+	            assign(style,
 	                //combinations
 	                props.mouseOver && props.primary && props.overPrimaryStyle,
 	                props.pressed   && props.primary && props.pressedPrimaryStyle,
 	                props.mouseOver && props.pressed && props.overPressedStyle
 	            )
+
 	        }
+
+	        ;(props.onStylesApplied || emptyFn)(style, props)
+	        ;(props.onStyleReady    || emptyFn)(style, props)
 
 	        return normalize(style)
 	    }
@@ -767,54 +863,153 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/** @jsx React.DOM */'use strict';
+	'use strict';
 
-	var React          = __webpack_require__(1)
-	var assign         = __webpack_require__(2)
-	var toArrowStyle   = __webpack_require__(7)
-	var Region         = __webpack_require__(6)
-	var cloneWithProps = __webpack_require__(3)
+	var React    = __webpack_require__(1)
+	var assign   = __webpack_require__(8)
+	var Button   = __webpack_require__(9)
+	var DDButton = __webpack_require__(10)
+
+	var PROPS_2_BUTTON_PROPS = [
+	    'fn',
+	    'onClick',
+	    'onToggle',
+	    'href',
+	    'align',
+	    'pressed',
+	    'defaultPressed',
+	    'label',
+	    'ellipsis',
+	    'children'
+	]
+
+	var PROPS_2_ALL_PROPS = [
+	    'disabled'
+	]
+
+	var PROPS_2_ARROW_PROPS = [
+	    'getAlignTarget',
+	    'renderMenu',
+	    'menuProps',
+	    'alignPositions',
+	    'alignOffset',
+	    'items',
+	    'menu',
+	    'menuFactory',
+	    'arrow',
+	    'renderMenu',
+	    'onMenuChange',
+	    'onMenuClick',
+	    'hideMenuOnClick',
+	    'menuParentId'
+	]
 
 	function emptyFn(){}
 
-	var Button = __webpack_require__(4)
-	var Menu   = __webpack_require__(8)
+	function copyFn(source, target){
+	    return function(name){
+	        if (source[name] != null){
+	            target[name] = source[name]
+	        }
+	    }
+	}
+
+	function transfer(list, target, source){
+	    list.forEach(copyFn(source, target))
+	}
+
+	function prepareRadius(props, target, side){
+	    side = side == 'left'? 'Left': 'Right'
+
+	    var style = props.style
+
+	    var borderTopSideName = 'borderTop' + side + 'Radius'
+	    var borderBottomSideName = 'borderBottom' + side + 'Radius'
+
+	    target[borderTopSideName]    = style[borderTopSideName] == null? style.borderRadius: style[borderTopSideName]
+	    target[borderBottomSideName] = style[borderBottomSideName] == null? style.borderRadius: style[borderBottomSideName]
+	}
+
+	//we do not apply the border to the SplitButton, but to the buttons it contains
+	//since if we were to apply the border to the SplitButton, when it has borderRadius, it would not be displayed well (especially on mouse over)
+	//
+	//so we move the border to the buttons below it, so they get rendered nicely
+	function prepareBorder(props, target, side){
+	    var otherSide = side == 'left'? 'Right': 'Left'
+	    side = side == 'left'? 'Left': 'Right'
+
+	    var style = props.style
+
+	    var border = style.border
+	    var borderTop = style.borderTop == null? border: style.borderTop
+	    var borderBottom = style.borderBottom == null? border: style.borderBottom
+
+	    var borderSideName = 'border' + side
+	    var borderOtherSideName = 'border' + otherSide
+
+	    var borderSide = style[borderSideName] == null? border: style[borderSideName]
+	    var borderOtherSide = style[borderOtherSideName] == null? border: style[borderOtherSideName]
+	    // debugger
+
+	    target.borderLeft      = 0
+	    target.borderRight     = 0
+	    target.borderTop       = borderTop
+	    target.borderBottom    = borderBottom
+	    target[borderSideName] = borderSide
+
+	    target[borderOtherSideName] = side == 'Right'? props.splitBorder || borderOtherSide: 0
+	}
+
+	function clearBorder(style){
+	    ['border','borderLeft','borderRight','borderTop','borderBottom'].forEach(function(name){
+	        style[name] = 0
+	    })
+	}
+
+	var DISPLAY_NAME = 'ReactSplitButton'
 
 	module.exports = React.createClass({
 
-	    displayName: 'ReactSplitButton',
+	    displayName: DISPLAY_NAME,
 
 	    getDefaultProps: function() {
 	        return {
+	            displayName: DISPLAY_NAME,
+
 	            defaultStyle: {
-	                border: '1px solid gray',
-	                padding: 5
+	                display      : 'inline-flex',
+	                boxSizing    : 'border-box',
+	                alignItems   : 'center',
+	                flexFlow     : 'row',
+	                verticalAlign: 'top',
+
+	                //theme properties
+	                padding   : 5,
+	                margin    : 2,
+	                border    : '1px solid rgb(218, 218, 218)'
 	            },
 
-	            arrowSize: 8,
-	            arrowWidth: 4,
-	            arrowHeight: null,
-	            arrowColor: 'black',
-	            arrowPosition: 'right',
-	            triggerMenuOnClick: true,
+	            defaultCommonStyle: {
+	            },
 
-	            defaultWrapperStyle: {
-	                display   : 'flex',
-	                height    : '100%',
-	                alignItems: 'center',
-	                position  : 'relative',
-	                boxSizing: 'border-box'
+	            defaultButtonStyle: {
+	                alignSelf: 'stretch',
+	                flex   : 1,
+	                margin : 0,
+	                padding: 0,
+	                border : 0
 	            },
-	            defaultAnchorWrapperStyle: {
-	                flex: 1
+
+	            defaultArrowStyle: {
+	                alignSelf: 'stretch',
+	                margin : 0,
+	                padding: 0,
+	                border : 0
 	            },
-	            defaultArrowWrapperStyle: {
-	                alignSelf : 'stretch',
-	                position  : 'relative',
-	                display   : 'flex',
-	                alignItems: 'center'
-	            },
-	            arrowWrapperBorder: '1px solid gray'
+
+	            smartArrowPadding: false,
+
+	            arrowPosition: 'right'
 	        }
 	    },
 
@@ -824,9 +1019,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    render: function(){
 
-	        var props = this.prepareProps(this.props, this.state)
+	        var state = this.state
+	        var props = this.prepareProps(this.props, state)
 
-	        return React.createElement(Button, React.__spread({ref: "button"},  props))
+	        return React.createElement("div", {"data-display-name": props['data-display-name'], style: props.style, children: props.children})
 	    },
 
 	    prepareProps: function(thisProps, state) {
@@ -834,334 +1030,110 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        assign(props, thisProps)
 
-	        props.mouseOverArrow = !!state.mouseOverArrow
+	        props['data-display-name'] = props['data-display-name'] || DISPLAY_NAME
+	        props.buttonSide = props.arrowPosition == 'right'? 'left' : 'right'
+	        props.arrowSide  = props.arrowPosition == 'right'? 'right': 'left'
 
-	        props.className          = this.prepareClassName(props)
-	        props.style              = this.prepareStyle(props)
+	        props.style       = this.prepareStyle(props)
+	        props.buttonProps = this.prepareButtonProps(props)
+	        props.arrowProps  = this.prepareArrowProps(props)
 
-	        props.initialPadding     = this.prepareInitialPadding(props, props.style)
-	        props.wrapperStyle       = this.prepareWrapperStyle(props)
-	        props.arrowStyle         = this.prepareArrowStyle(props)
-	        props.arrowWrapperStyle  = this.prepareArrowWrapperStyle(props)
-	        props.anchorWrapperStyle = this.prepareAnchorWrapperStyle(props, props.style)
-	        props.anchorFactory = this.renderAnchor.bind(this, props, state)
+	        //see comment at #prepareBorder
+	        clearBorder(props.style)
 
-	        props.interceptClick = this.handleClick.bind(this, props)
-
-	        delete props.defaultStyle
+	        props.children = this.prepareChildren(props)
 
 	        return props
 	    },
 
-	    prepareInitialPadding: function(props, style) {
-	        var result = {}
+	    prepareChildren: function(props) {
+	        var arrow      = React.createElement(DDButton, React.__spread({ref: "arrow"},  props.arrowProps))
+
+	        var leftArrow  = props.arrowPosition != 'right'? arrow: null
+	        var rightArrow = props.arrowPosition == 'right'? arrow: null
+
+	        var children = []
+
+	        leftArrow && children.push(leftArrow)
+	        children.push(React.createElement(Button, React.__spread({ref: "button"},  props.buttonProps)))
+	        rightArrow && children.push(rightArrow)
+
+	        return children
+	    },
+
+	    prepareButtonProps: function(props) {
+	        var buttonProps = assign({}, props.defaultButtonProps, props.commonProps, props.buttonProps)
+
+	        buttonProps.style = this.prepareButtonStyle(props, buttonProps)
+
+	        transfer(PROPS_2_BUTTON_PROPS, buttonProps, props)
+	        transfer(PROPS_2_ALL_PROPS, buttonProps, props)
+
+	        return buttonProps
+	    },
+
+	    prepareButtonStyle: function(props, buttonProps){
+	        var defaultButtonStyle = assign({}, props.defaultButtonStyle, props.padding)
+
+	        prepareRadius(props, defaultButtonStyle, props.buttonSide)
+	        prepareBorder(props, defaultButtonStyle, props.buttonSide)
+
+	        var style = assign({}, defaultButtonStyle, props.defaultCommonStyle, props.commonStyle, buttonProps.style, props.buttonStyle)
+
+	        return style //no need to normalize, since button does this for you
+	    },
+
+	    prepareArrowProps: function(props) {
+	        var arrowProps = assign({}, props.defaultArrowProps, props.commonProps, props.arrowProps)
+
+	        arrowProps.style = this.prepareArrowStyle(props, arrowProps)
+
+	        transfer(PROPS_2_ARROW_PROPS, arrowProps, props)
+	        transfer(PROPS_2_ALL_PROPS, arrowProps, props)
+
+	        return arrowProps
+	    },
+
+	    prepareArrowStyle: function(props, arrowProps){
+	        var defaultArrowStyle = assign({}, props.defaultArrowStyle, props.padding)
+
+	        prepareRadius(props, defaultArrowStyle, props.arrowSide)
+	        prepareBorder(props, defaultArrowStyle, props.arrowSide)
+
+	        var style = assign({}, defaultArrowStyle, props.defaultCommonStyle, props.commonStyle, props.arrowStyle, arrowProps.style)
+
+	        return style //no need to normalize, since button does this for you
+	    },
+
+	    prepareStyle: function(props) {
+	        var defaultStyle = assign({}, props.defaultStyle)
+
+	        if (props.block){
+	            defaultStyle.display = 'flex'
+	        }
+
+	        var style = assign({}, defaultStyle, props.style)
+
+	        var padding = {}
 
 	        ;['padding','paddingTop','paddingBottom','paddingLeft','paddingRight'].forEach(function(side){
 	            if (style[side] != undefined){
-	                result[side] = style[side]
+	                padding[side] = style[side]
 	            }
 	            style[side] = 0
 	        })
 
-	        return result
-	    },
-
-	    prepareClassName: function(props) {
-	        var className = props.className || ''
-
-	        className += ' z-split-button'
-
-	        return className
-	    },
-
-	    prepareStyle: function(props) {
-	        var style = {}
-
-	        assign(style, props.defaultStyle, props.style)
-
+	        props.padding = padding
 	        return style
-	    },
-
-	    prepareArrowStyle: function(props) {
-	        var height = props.arrowHeight || props.arrowSize
-
-	        var arrowStyle = {}
-	        var color = props.arrowColor
-
-	        if (props.mouseOverArrow){
-	            assign(arrowStyle, props.overArrowStyle)
-	        }
-
-	        color = arrowStyle.color || color
-
-	        var style = toArrowStyle('down', {
-	            width    : props.arrowWidth || props.arrowSize,
-	            height   : height,
-	            color    : color || props.arrowColor
-	        })
-
-	        assign(arrowStyle, style, {
-	            display: 'inline-block'
-	        })
-
-	        return arrowStyle
-	    },
-
-	    prepareWrapperStyle: function(props, style) {
-	        var wrapperStyle = {}
-
-	        assign(wrapperStyle, props.defaultWrapperStyle, props.wrapperStyle)
-
-	        return wrapperStyle
-	    },
-
-	    prepareAnchorWrapperStyle: function(props, style) {
-	        var anchorWrapperStyle = {}
-
-	        assign(anchorWrapperStyle,
-	                props.defaultAnchorWrapperStyle,
-	                props.anchorWrapperStyle,
-	                props.initialPadding)
-
-	        if (style.textAlign){
-	            anchorWrapperStyle.textAlign = style.textAlign
-	        }
-
-	        return anchorWrapperStyle
-	    },
-
-	    prepareArrowWrapperStyle: function(props) {
-	        var style = {}
-
-	        assign(style,
-	                props.defaultArrowWrapperStyle,
-	                props.arrowWrapperStyle,
-	                props.initialPadding)
-
-	        var side = props.arrowPosition === 'right'? 'borderLeft': 'borderRight'
-
-	        style[side] = style[side] || props.arrowWrapperBorder || props.style.border
-
-
-	        return style
-	    },
-
-	    renderAnchor: function(props, state, anchorProps) {
-
-	        return React.createElement("div", {ref: "wrapper", className: "z-wrapper", style: props.wrapperStyle}, 
-	            React.createElement("div", {style: props.anchorWrapperStyle}, 
-	                React.createElement("a", React.__spread({},  anchorProps))
-	            ), 
-
-	            this.renderArrow(props), 
-	            this.renderMenu(props, state)
-	        )
-	    },
-
-	    renderMenu: function(props, state) {
-	        if (state.menu){
-	            return state.menu
-	        }
-	    },
-
-	    renderArrow: function(props) {
-	        var style = props.arrowStyle
-
-	        if (props.renderArrow){
-	            return props.renderArrow({
-	                style: style
-	            })
-	        }
-
-	        return (
-	            React.createElement("div", {ref: "arrowWrapper", onMouseOver: this.handleArrowMouseOver, onMouseOut: this.handleArrowMouseOut, onClick: this.handleArrowClick.bind(this, props), className: "z-arrow-wrapper", style: props.arrowWrapperStyle}, 
-	                React.createElement("div", {style: style})
-	            )
-	        )
-
-	    },
-
-	    handleArrowMouseOver: function() {
-	        this.setState({
-	            mouseOverArrow: true
-	        })
-	    },
-
-	    handleArrowMouseOut: function() {
-	        this.setState({
-	            mouseOverArrow: false
-	        })
-	    },
-
-	    handleArrowClick: function(props, event) {
-	        console.log('arrow click')
-
-	        event.nativeEvent.preventButtonClick = true
-	        var result = (props.onArrowClick || emptyFn)(event)
-
-	        if (result !== false){
-	            this.toggleMenu(props)
-	        } else {
-	            this.hideMenu()
-	        }
-	    },
-
-	    toggleMenu: function(props) {
-	        if (this.state.menu){
-	            this.hideMenu()
-	        } else {
-	            this.showMenu(props)
-	        }
-	    },
-
-	    showMenu: function(props) {
-	        var targetRegion  = Region.from(this.refs.button.refs.arrowWrapper.getDOMNode())
-	        var wrapperRegion = Region.from(this.refs.button.refs.wrapper.getDOMNode())
-
-	        var menuStyle = {
-	            position: 'absolute',
-	            color   : 'black',
-	            top     : '100%',
-	            left    : targetRegion.left - wrapperRegion.left
-	        }
-
-	        this.removeClickListener()
-
-	        document.addEventListener('click', this.clickEventListener = this.onDocumentClick)
-
-	        var menuProps = {
-	                            style  : menuStyle,
-	                            onClick: this.onMenuItemClick
-	                        }
-	        var menu = typeof props.menu == 'function'?
-	                        props.menu():
-	                        props.menu?
-	                            cloneWithProps(props.menu, menuProps):
-	                            React.createElement(Menu, React.__spread({items: props.items},  menuProps))
-
-	        this.setState({
-	            menu: menu
-	        })
-	    },
-
-	    onDocumentClick: function() {
-	        this.hideMenu()
-	    },
-
-	    componentWillUnmount: function(){
-	        this.removeClickListener()
-	    },
-
-	    removeClickListener: function() {
-	        if (this.clickEventListener){
-	            document.removeEventListener('click', this.clickEventListener)
-	            this.clickEventListener = null
-	        }
 	    },
 
 	    hideMenu: function() {
-	        if (this.state.menu){
-	            this.removeClickListener()
-	            this.setState({
-	                menu: false
-	            })
-	        }
-	    },
-
-	    onMenuItemClick: function() {
-	        this.hideMenu()
-	    },
-
-	    handleClick: function(props, defaultAction, event) {
-	        if (props.triggerMenuOnClick || event.nativeEvent.preventButtonClick){
-	            if (props.triggerMenuOnClick){
-	                this.toggleMenu(props)
-	            }
-	            return
-	        }
-
-	        defaultAction(event)
+	        return this.refs.arrow.hideMenu()
 	    }
 	})
 
 /***/ },
 /* 6 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = __webpack_require__(11)
-
-/***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	module.exports = function arrowStyle(side, config){
-
-	    var arrowSize   = config.size   || 8
-	    var arrowWidth  = config.width  || arrowSize
-	    var arrowHeight = config.height || arrowSize
-	    var arrowColor  = config.color  || 'black'
-	    var includePosition = config.includePosition
-
-	    var style
-
-	    if (side == 'up' || side == 'down'){
-
-	        style = {
-	            borderLeft : arrowWidth + 'px solid transparent',
-	            borderRight: arrowWidth + 'px solid transparent'
-	        }
-
-	        if (includePosition){
-	            style.marginTop = -Math.round(arrowHeight/2) + 'px'
-	            style.position  = 'relative'
-	            style.top       = '50%'
-	        }
-
-	        style[side === 'up'? 'borderBottom': 'borderTop'] = arrowHeight + 'px solid ' + arrowColor
-	    }
-
-	    if (side == 'left' || side == 'right'){
-
-	        style = {
-	            borderTop : arrowHeight + 'px solid transparent',
-	            borderBottom: arrowHeight + 'px solid transparent'
-	        }
-
-	        if (includePosition){
-	            style.marginLeft = -Math.round(arrowWidth/2) + 'px'
-	            style.position   = 'relative'
-	            style.left       = '50%'
-	        }
-
-	        style[side === 'left'? 'borderRight': 'borderLeft'] = arrowWidth + 'px solid ' + arrowColor
-	    }
-
-	    return style
-	}
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var MenuClass = __webpack_require__(12)
-
-	var MenuItem      = __webpack_require__(15)
-	var MenuItemCell  = __webpack_require__(13)
-	var MenuSeparator = __webpack_require__(14)
-
-	MenuClass.Item      = MenuItem
-	MenuClass.Item.Cell = MenuItemCell
-	MenuClass.ItemCell  = MenuItemCell
-	MenuClass.Separator = MenuSeparator
-
-	module.exports = MenuClass
-
-/***/ },
-/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1193,16 +1165,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 10 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var hasOwn      = __webpack_require__(16)
-	var getPrefixed = __webpack_require__(17)
+	var hasOwn      = __webpack_require__(11)
+	var getPrefixed = __webpack_require__(12)
 
-	var map      = __webpack_require__(18)
-	var plugable = __webpack_require__(19)
+	var map      = __webpack_require__(13)
+	var plugable = __webpack_require__(14)
 
 	function plugins(key, value){
 
@@ -1262,19 +1234,4515 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = plugable(RESULT)
 
 /***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function ToObject(val) {
+		if (val == null) {
+			throw new TypeError('Object.assign cannot be called with null or undefined');
+		}
+
+		return Object(val);
+	}
+
+	module.exports = Object.assign || function (target, source) {
+		var from;
+		var keys;
+		var to = ToObject(target);
+
+		for (var s = 1; s < arguments.length; s++) {
+			from = arguments[s];
+			keys = Object.keys(Object(from));
+
+			for (var i = 0; i < keys.length; i++) {
+				to[keys[i]] = from[keys[i]];
+			}
+		}
+
+		return to;
+	};
+
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var React     = __webpack_require__(1)
+	var assign    = __webpack_require__(6)
+	var normalize = __webpack_require__(7)
+
+	function emptyFn(){}
+
+	var ALIGN = (function(){
+	    var MAP = {
+	        left  : 'flex-start',
+	        start : 'flex-start',
+	        center: 'center',
+	        right : 'flex-end',
+	        end   : 'flex-end'
+	    }
+
+	    return function(value){
+	        return MAP[value] || value
+	    }
+	})()
+
+	var PropTypes    = React.PropTypes
+	var DISPLAY_NAME = 'ReactButton'
+
+	module.exports = React.createClass({
+
+	    displayName: DISPLAY_NAME,
+
+	    propTypes: {
+	        fn: PropTypes.func,
+	        onClick: PropTypes.func,
+
+	        primary: PropTypes.bool,
+	        disabled: PropTypes.bool,
+	        pressed: PropTypes.bool,
+	        defaultPressed: PropTypes.bool,
+
+	        href: PropTypes.string,
+	        align: PropTypes.string,
+
+	        style: PropTypes.object,
+	        activeStyle: PropTypes.object,
+	        overStyle: PropTypes.object,
+	        focusedStyle: PropTypes.object,
+	        disabledStyle: PropTypes.object,
+
+	        className       : PropTypes.string,
+	        activeClassName : PropTypes.string,
+	        overClassName   : PropTypes.string,
+	        focusedClassName: PropTypes.string,
+	        disabledClassName: PropTypes.string
+	    },
+
+	    getDefaultProps: function() {
+	        return {
+	            isReactButton: true,
+	            'data-display-name': DISPLAY_NAME,
+
+	            align: 'center',
+
+	            themed: true,
+
+	            defaultStyle: {
+	                boxSizing     : 'border-box',
+
+	                display       : 'inline-flex',
+	                alignItems    : 'center',
+	                justifyContent: 'center',
+
+	                userSelect    : 'none',
+	                textDecoration: 'none',
+	                cursor        : 'pointer',
+	                overflow      : 'hidden',
+
+	                //theme properties
+	                //fontFamily: 'Arial',
+	                // fontSize  : '0.9em',
+	                whiteSpace: 'nowrap',
+	                padding   : 5,
+	                margin    : 2
+	            },
+
+	            defaultThemeStyle: {
+	                border    : '1px solid rgb(218, 218, 218)',
+	                color     : 'rgb(120, 120, 120)',
+	            },
+
+	            defaultPrimaryStyle: {
+	                //theme properties
+	                background: 'rgb(103, 175, 233)',
+	                color: 'white'
+	            },
+
+	            defaultOverStyle: {
+	                //theme properties
+	                background: 'rgb(118, 181, 231)',
+	                color: 'white'
+	            },
+
+	            defaultPressedStyle: {
+	                //theme properties
+	                background: 'rgb(90, 152, 202)',
+	                color: 'white'
+	            },
+
+	            defaultDisabledPrimaryStyle: {
+	                //theme properties
+	                background: 'rgb(116, 144, 166)',
+	                color: 'rgb(190, 190, 190)'
+	            },
+
+	            defaultDisabledStyle: {
+	                cursor: 'default',
+
+	                //theme properties
+	                background: 'rgb(221, 221, 221)',
+	                color: 'rgb(128, 128, 128)'
+	            },
+
+	            defaultLabelStyle: {
+	                display: 'inline-block'
+	            },
+
+	            ellipsisLabelStyle: {
+	                textOverflow: 'ellipsis',
+	                overflow: 'hidden',
+	                whiteSpace: 'nowrap'
+	            },
+
+	            ellipsis: true,
+
+	            href: ''
+	        }
+	    },
+
+	    getInitialState: function() {
+	        return {
+	            mouseOver: false,
+	            active: false,
+	            defaultPressed: this.props.defaultPressed
+	        }
+	    },
+
+	    isFocused: function() {
+	        return this.state.focused
+	    },
+
+	    isActive: function() {
+	        return !!this.state.active
+	    },
+
+	    render: function(){
+	        var props = this.prepareProps(this.props, this.state)
+
+	        return (props.factory || React.DOM.a)(props)
+	    },
+
+	    prepareProps: function(thisProps, state) {
+
+	        var props = {}
+
+	        assign(props, thisProps)
+
+	        var pressed = props.pressed != null? props.pressed: state.defaultPressed
+
+	        if (pressed != null){
+	            props.pressed = pressed
+	        }
+
+	        props.active    = !!state.active
+	        props.mouseOver = props.overState == null? !!state.mouseOver: props.overState
+	        props.focused = !!state.focused
+
+	        props['data-active']  = props.active
+	        props['data-over']    = props.mouseOver
+	        props['data-focused'] = props.focused
+	        props['data-pressed'] = props.pressed
+	        props['data-primary'] = props.primary
+
+	        props.style     = this.prepareStyle(props, state)
+	        props.className = this.prepareClassName(props, state)
+	        props.children = this.prepareChildren(props)
+
+	        var handleClick = this.handleClick.bind(this, props)
+
+	        props.onClick = typeof props.interceptClick == 'function'?
+	                            props.interceptClick.bind(this, handleClick):
+	                            handleClick
+
+	        props.onFocus      = this.handleFocus.bind(this, props)
+	        props.onBlur       = this.handleBlur.bind(this, props)
+	        props.onMouseEnter = this.handleMouseEnter.bind(this, props)
+	        props.onMouseLeave = this.handleMouseLeave.bind(this, props)
+	        props.onMouseDown  = this.handleMouseDown.bind(this, props)
+	        props.onMouseUp    = this.handleMouseUp.bind(this, props)
+
+	        return props
+	    },
+
+	    handleFocus: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            focused: true
+	        })
+
+	        ;(this.props.onFocus || emptyFn)(event)
+	    },
+
+	    handleBlur: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            focused: false
+	        })
+
+	        ;(this.props.onBlur || emptyFn)(event)
+	    },
+
+	    handleClick: function(props, event) {
+	        if (!props.href || props.disabled){
+	            event.preventDefault()
+	        }
+
+	        if (props.disabled){
+	            return
+	        }
+
+	        if (props.pressed != null){
+	            var newPressed = !props.pressed
+
+	            if (this.props.pressed == null){
+	                this.setState({
+	                    defaultPressed: newPressed
+	                })
+	            }
+
+	            ;(this.props.onToggle || emptyFn)(newPressed, event)
+	        }
+
+	        ;(this.props.onClick || emptyFn)(event)
+	        ;(this.props.fn || emptyFn)(props, event)
+	    },
+
+	    handleMouseEnter: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            mouseOver: true
+	        })
+
+	        ;(this.props.onMouseEnter || emptyFn)(event)
+	    },
+
+	    handleMouseLeave: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            mouseOver: false
+	        })
+
+	        ;(this.props.onMouseLeave || emptyFn)(event)
+	    },
+
+	    handleMouseUp: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            active: false
+	        })
+
+	        window.removeEventListener('mouseup', this.handleMouseUp)
+
+	        ;(this.props.onMouseUp || emptyFn)(event)
+	        ;(this.props.onDeactivate || emptyFn)(event)
+	    },
+
+	    handleMouseDown: function(props, event) {
+
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            active: true
+	        })
+
+	        window.addEventListener('mouseup', this.handleMouseUp)
+
+	        ;(this.props.onMouseDown || emptyFn)(event)
+	        ;(this.props.onActivate || emptyFn)(event)
+	    },
+
+	    prepareChildren: function(props) {
+	        var children = props.children
+
+	        if (props.label){
+
+	            var labelProps = assign({}, props.defaultLabelProps, props.labelProps)
+	            var defaultLabelStyle = assign({}, props.defaultLabelStyle)
+
+	            if (props.ellipsis){
+	                assign(defaultLabelStyle, props.ellipsisLabelStyle)
+	            }
+
+	            var labelStyle = assign({}, defaultLabelStyle, labelProps.style, props.labelStyle)
+
+	            labelProps.style = labelStyle
+
+	            children = React.createElement("span", React.__spread({},  labelProps), 
+	                props.label
+	            )
+	        }
+
+	        if (typeof this.props.renderChildren === 'function'){
+	            return this.props.renderChildren(children)
+	        }
+
+	        return children
+	    },
+
+	    prepareClassName: function(props) {
+
+	        var className = props.className || ''
+
+	        if (props.disabled){
+	            if (props.disabledClassName){
+	                className += ' ' + props.disabledClassName
+	            }
+	        } else {
+	            if (props.active && props.activeClassName){
+	                className += ' ' + props.activeClassName
+	            }
+
+	            if (props.pressed && props.pressedClassName){
+	                className += ' ' + props.pressedClassName
+	            }
+
+	            if (props.mouseOver && props.overClassName){
+	                className += ' ' + props.overClassName
+	            }
+
+	            if (props.focused && props.focusedClassName){
+	                className += ' ' + props.focusedClassName
+	            }
+	        }
+
+	        if (props.primary && props.primaryClassName){
+	            className += ' ' + props.primaryClassName
+	        }
+
+	        return className
+	    },
+
+	    prepareStyle: function(props) {
+	        var style = {}
+	        var defaultStyle = assign({}, props.defaultStyle)
+
+	        if (props.themed){
+	            assign(defaultStyle, props.defaultThemeStyle)
+	        }
+
+	        if (props.block){
+	            defaultStyle.display = 'flex'
+	        }
+
+	        defaultStyle.justifyContent = ALIGN(props.align)
+
+	        //defaultStyle
+	        assign(style, defaultStyle)
+
+	        if (props.themed){
+
+	            if (props.disabled){
+	                assign(style,
+	                    props.defaultDisabledStyle,
+	                    props.primary && props.defaultDisabledPrimaryStyle
+	                )
+	            } else {
+	                assign(style,
+	                    //DEFAULTS
+	                    props.focused   && props.defaultFocusedStyle,
+	                    props.primary   && props.defaultPrimaryStyle,
+	                    props.mouseOver && props.defaultOverStyle,
+	                    props.pressed   && props.defaultPressedStyle,
+	                    props.active    && props.defaultActiveStyle
+	                )
+
+	                assign(style,
+	                    //combinations
+	                    props.mouseOver && props.primary && props.defaultOverPrimaryStyle,
+	                    props.pressed   && props.primary && props.defaultPressedPrimaryStyle,
+	                    props.mouseOver && props.pressed && props.defaultOverPressedStyle
+	                )
+	            }
+	        }
+
+	        ;(props.onDefaultStylesApplied || emptyFn)(style)
+	        ;(props.onDefaultStyleReady    || emptyFn)(style)
+
+	        //style
+	        assign(style, props.style)
+
+	        if (props.disabled){
+	            assign(style,
+	                props.disabledStyle,
+	                props.primary && props.disabledPrimaryStyle
+	            )
+
+	        } else {
+	            assign(style,
+	                //NON-DEFAULTS
+	                props.focused   && props.focusedStyle,
+	                props.primary   && props.primaryStyle,
+	                props.mouseOver && props.overStyle,
+	                props.pressed   && props.pressedStyle,
+	                props.active    && props.activeStyle
+	            )
+
+	            assign(style,
+	                //combinations
+	                props.mouseOver && props.primary && props.overPrimaryStyle,
+	                props.pressed   && props.primary && props.pressedPrimaryStyle,
+	                props.mouseOver && props.pressed && props.overPressedStyle
+	            )
+
+	        }
+
+	        ;(props.onStylesApplied || emptyFn)(style, props)
+	        ;(props.onStyleReady    || emptyFn)(style, props)
+
+	        return normalize(style)
+	    }
+	})
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var React  = __webpack_require__(1)
+	var Button = __webpack_require__(21)
+	var assign = __webpack_require__(18)
+	var cloneWithProps = __webpack_require__(20)
+	var hasTouch = __webpack_require__(19)
+
+	var Menu   = __webpack_require__(22)
+	var MenuFactory = React.createFactory(Menu)
+
+	function emptyFn(){}
+
+	var DISPLAY_NAME = 'ReactDropDownButton'
+
+	module.exports = React.createClass({
+
+	    displayName: DISPLAY_NAME,
+
+	    getInitialState: function(){
+	    	return {
+	    	}
+	    },
+
+	    getDefaultProps: function(){
+	    	return {
+	            'data-display-name': DISPLAY_NAME,
+	            stopClickPropagation: false,
+	            hideMenuOnClick: true,
+
+	    		defaultStyle: {
+	    			boxSizing: 'border-box',
+	    			verticalAlign: 'top',
+	    			//theme props
+					padding: 5
+	    		},
+
+	    		// defaultOverStyle: {},
+
+	    		defaultOpenedStyle: {
+	    		    //theme properties
+	    		    background: 'rgb(118, 181, 231)',
+	    		    color: 'white'
+	    		},
+
+	    		defaultArrowStyle: {
+					display  : 'inline-block',
+					boxSizing: 'border-box',
+					fontSize : '0.8em'
+	    		},
+
+	    		defaultMenuStyle: {},
+
+	    		// alignOffset: { left: 0, top: -1 },
+	    		enforceNonStatic: true,
+	    		arrowPosition: 'right'
+	    	}
+	    },
+
+	    render: function(){
+
+	    	var props = this.prepareProps(this.props, this.state)
+
+	        return React.createElement(Button, React.__spread({ref: "button"},  props))
+	    },
+
+	    prepareProps: function(thisProps, state) {
+	    	var props = assign({}, thisProps)
+
+	    	props.style = this.prepareStyle(props)
+	    	props.onClick = this.handleClick.bind(this, props)
+	    	props.renderChildren = this.renderChildren.bind(this, props)
+
+	        props.onDefaultStyleReady = this.onDefaultStyleReady.bind(this, props)
+	        props.onStyleReady        = this.onStyleReady.bind(this, props)
+
+	    	return props
+	    },
+
+	    prepareStyle: function(props){
+
+	    	var style = assign({}, props.defaultStyle, props.style)
+
+	    	delete props.defaultStyle
+
+	    	//enforce relative position so that menu gets rendered correctly
+	    	style.position = style.position == 'absolute'? style.position: 'relative'
+	    	style.overflow = 'visible'
+
+	    	return style
+	    },
+
+	    onDefaultStyleReady: function(props, style) {
+	    	if (this.menu){
+	    		assign(style, props.defaultOpenedStyle)
+	    	}
+
+	    	;(this.props.onDefaultStyleReady || emptyFn)(style)
+	    },
+
+	    onStyleReady: function(props, style) {
+	    	if (this.menu){
+	    		assign(style, props.openedStyle)
+	    	}
+
+	    	;(this.props.onStyleReady || emptyFn)(style)
+	    },
+
+	    renderChildren: function(props, children) {
+	    	var arrow = this.renderArrow(props)
+	    	var leftArrow
+	    	var rightArrow = arrow
+
+	    	if (props.arrowPosition != 'right'){
+	    		leftArrow = arrow
+	    		rightArrow = null
+	    	}
+
+	    	var children = [
+	            this.state.menu,
+	    		leftArrow,
+	    		children,
+	    		rightArrow
+	    	]
+
+	        if (typeof this.props.renderChildren == 'function'){
+	            return this.props.renderChildren(children)
+	        }
+
+	        return children
+	    },
+
+	    renderArrow: function(props) {
+	    	var arrow = props.arrow
+
+	    	if (props.renderArrow){
+	    		arrow = props.renderArrow(props)
+	    	}
+
+	    	if (arrow === false){
+	    		return
+	    	}
+
+	    	return arrow || this.getDefaultArrow(props)
+	    },
+
+	    getDefaultArrow: function(props) {
+
+	    	var otherSide = props.arrowPosition != 'right'? 'Right': 'Left'
+
+	    	var defaultArrowStyle = props.defaultArrowStyle
+
+	        if (props.smartArrowPadding){
+	            defaultArrowStyle = assign({}, defaultArrowStyle)
+	        	defaultArrowStyle['padding' + otherSide] = props.style.padding
+	        }
+
+	    	var arrowStyle = assign({}, defaultArrowStyle, props.arrowStyle)
+
+	    	return React.createElement("span", {style: arrowStyle}, "▼")
+	    },
+
+	    handleClick: function(props, event) {
+
+	        if (event && event.nativeEvent && event.nativeEvent.clickInsideMenu){
+	            //there was a click inside the menu,
+	            //so don't count that as a click in the button
+	            return
+	        }
+
+	        props.stopClickPropagation && event.stopPropagation()
+
+	    	;(this.props.onClick || emptyFn).apply(null, [].slice.call(arguments, 1))
+
+	        this.ignoreClick(function(){
+	            //in order to get picked up after the click event has propagated to the window
+	    	    this.toggleMenu(props)
+	        })
+	    },
+
+	    toggleMenu: function(props) {
+	        if (this.menu){
+	            this.hideMenu()
+	        } else {
+	            this.showMenu(props)
+	        }
+	    },
+
+	    setMenu: function(menu) {
+
+	        this.menu = menu
+
+	        if (typeof this.props.onMenuChange == 'function'){
+	            this.props.onMenuChange(menu, this, this._rootNodeID)
+	        }
+
+	        if (this.props.renderMenu === false){
+	            return
+	        }
+
+	        this.setState({
+	            menu: menu
+	        })
+	    },
+
+	    showMenu: function(props) {
+	        var target = props.getAlignTarget?
+	                        props.getAlignTarget.call(this):
+	                        this.getDOMNode()
+
+	        this.removeClickListener()
+
+	        window.addEventListener('click', this.clickEventListener = this.onDocumentClick)
+
+	        var menuProps = assign({}, props.menuProps)
+	        var menuStyle = assign({
+				                    position: 'absolute',
+				                    zIndex: 1
+				                },
+				                props.defaultMenuStyle,
+				                menuProps.style,
+				                props.menuStyle
+			               )
+
+	        menuProps.style = menuStyle
+	        menuProps.alignPositions = props.alignPositions || menuProps.alignPositions || [
+	            'tl-bl',
+	            'tr-br',
+	            'bl-tl',
+	            'br-tr'
+	        ]
+
+	        assign(menuProps, {
+				onClick    : this.onMenuItemClick.bind(this, props),
+				alignOffset: props.alignOffset || menuProps.alignOffset,
+				alignTo    : target,
+				items      : menuProps.items || props.items
+	        })
+
+	        var menu
+
+	        if (props.menu){
+	            menu = cloneWithProps(props.menu, menuProps)
+	        } else {
+	            menu = typeof props.menuFactory == 'function'? props.menuFactory(menuProps): undefined
+
+	            if (menu === undefined && menuProps.items){
+	                menu = MenuFactory(menuProps)
+	            }
+	        }
+
+
+	        this.setMenu(menu)
+	    },
+
+	    isExpanderClick: function(event) {
+	        if (
+	            hasTouch &&
+	            event &&
+	            ((event.nativeEvent && event.nativeEvent.expanderClick) || event.expanderClick)
+	        ){
+	            return true
+	        }
+
+	        return false
+	    },
+
+	    onDocumentClick: function(event) {
+	        if (
+	            this.ignoreWindowClick ||
+	            this.isExpanderClick(event)
+	        ){
+	            return
+	        }
+
+	        this.hideMenu()
+	    },
+
+	    componentWillUnmount: function(){
+	        this.removeClickListener()
+	        this.setMenu(false)
+	    },
+
+	    removeClickListener: function() {
+	        if (this.clickEventListener){
+	            window.removeEventListener('click', this.clickEventListener)
+	            this.clickEventListener = null
+	        }
+	    },
+
+	    hideMenu: function() {
+	        if (this.menu){
+	            this.removeClickListener()
+	            this.setMenu(false)
+	        }
+	    },
+
+	    onMenuItemClick: function(props, event, itemProps, index) {
+
+	        if (index === undefined){
+	            //default click event propagated, not called by the menu cmp
+	            return
+	        }
+
+	        if (this.isExpanderClick(event)){
+	            return
+	        }
+
+	        if (this.props.menuProps){
+	        	;(this.props.menuProps.onClick || emptyFn)(event, itemProps, index)
+	        }
+
+	        event.nativeEvent.clickInsideMenu = true
+
+	        ;(this.props.onMenuClick || emptyFn)(event, itemProps, index)
+
+	        if (!this.props.hideMenuOnClick || event.nativeEvent.hideMenu === false || (itemProps && itemProps.data && itemProps.data.hideMenu === false)){
+	            this.ignoreClick()
+	        } else {
+	            //when menu is hidden, mouseleave from button is not triggered, so we trigger it manually
+	            this.menu && this.refs.button && this.refs.button.handleMouseLeave(props, event)
+	            // this.hideMenu() - hideMenu will be called by onDocumentClick
+	        }
+	    },
+
+	    ignoreClick: function(callback) {
+	        this.ignoreWindowClick = true
+
+	        setTimeout(function(){
+	            this.ignoreWindowClick = false
+	            typeof callback == 'function' && callback.call(this)
+	        }.bind(this), 0)
+	    }
+	})
+
+/***/ },
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var hasOwn    = __webpack_require__(34)
-	var newify    = __webpack_require__(36)
+	module.exports = function(obj, prop){
+		return Object.prototype.hasOwnProperty.call(obj, prop)
+	}
 
-	var assign      = __webpack_require__(2);
-	var EventEmitter = __webpack_require__(35).EventEmitter
 
-	var inherits = __webpack_require__(20)
-	var VALIDATE = __webpack_require__(21)
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var getStylePrefixed = __webpack_require__(15)
+	var properties       = __webpack_require__(16)
+
+	module.exports = function(key, value){
+
+		if (!properties[key]){
+			return key
+		}
+
+		return getStylePrefixed(key, value)
+	}
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	module.exports = function(fn, item){
+
+		if (!item){
+			return
+		}
+
+		if (Array.isArray(item)){
+			return item.map(fn).filter(function(x){
+				return !!x
+			})
+		} else {
+			return fn(item)
+		}
+	}
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var getCssPrefixedValue = __webpack_require__(17)
+
+	module.exports = function(target){
+		target.plugins = target.plugins || [
+			(function(){
+				var values = {
+					'flex':1,
+					'inline-flex':1
+				}
+
+				return function(key, value){
+					if (key === 'display' && value in values){
+						return {
+							key  : key,
+							value: getCssPrefixedValue(key, value)
+						}
+					}
+				}
+			})()
+		]
+
+		target.plugin = function(fn){
+			target.plugins = target.plugins || []
+
+			target.plugins.push(fn)
+		}
+
+		return target
+	}
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var toUpperFirst = __webpack_require__(23)
+	var getPrefix    = __webpack_require__(24)
+	var el           = __webpack_require__(25)
+
+	var MEMORY = {}
+	var STYLE = el.style
+
+	module.exports = function(key, value){
+
+	    var k = key// + ': ' + value
+
+	    if (MEMORY[k]){
+	        return MEMORY[k]
+	    }
+
+	    var prefix
+	    var prefixed
+
+	    if (!(key in STYLE)){//we have to prefix
+
+	        prefix = getPrefix('appearance')
+
+	        if (prefix){
+	            prefixed = prefix + toUpperFirst(key)
+
+	            if (prefixed in STYLE){
+	                key = prefixed
+	            }
+	        }
+	    }
+
+	    MEMORY[k] = key
+
+	    return key
+	}
+
+/***/ },
+/* 16 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	module.exports = {
+	  'alignItems': 1,
+	  'justifyContent': 1,
+	  'flex': 1,
+	  'flexFlow': 1,
+
+	  'userSelect': 1,
+	  'transform': 1,
+	  'transition': 1,
+	  'transformOrigin': 1,
+	  'transformStyle': 1,
+	  'transitionProperty': 1,
+	  'transitionDuration': 1,
+	  'transitionTimingFunction': 1,
+	  'transitionDelay': 1,
+	  'borderImage': 1,
+	  'borderImageSlice': 1,
+	  'boxShadow': 1,
+	  'backgroundClip': 1,
+	  'backfaceVisibility': 1,
+	  'perspective': 1,
+	  'perspectiveOrigin': 1,
+	  'animation': 1,
+	  'animationDuration': 1,
+	  'animationName': 1,
+	  'animationDelay': 1,
+	  'animationDirection': 1,
+	  'animationIterationCount': 1,
+	  'animationTimingFunction': 1,
+	  'animationPlayState': 1,
+	  'animationFillMode': 1,
+	  'appearance': 1
+	}
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var getPrefix     = __webpack_require__(24)
+	var forcePrefixed = __webpack_require__(26)
+	var el            = __webpack_require__(25)
+
+	var MEMORY = {}
+	var STYLE = el.style
+
+	module.exports = function(key, value){
+
+	    var k = key + ': ' + value
+
+	    if (MEMORY[k]){
+	        return MEMORY[k]
+	    }
+
+	    var prefix
+	    var prefixed
+	    var prefixedValue
+
+	    if (!(key in STYLE)){
+
+	        prefix = getPrefix('appearance')
+
+	        if (prefix){
+	            prefixed = forcePrefixed(key, value)
+
+	            prefixedValue = '-' + prefix.toLowerCase() + '-' + value
+
+	            if (prefixed in STYLE){
+	                el.style[prefixed] = ''
+	                el.style[prefixed] = prefixedValue
+
+	                if (el.style[prefixed] !== ''){
+	                    value = prefixedValue
+	                }
+	            }
+	        }
+	    }
+
+	    MEMORY[k] = value
+
+	    return value
+	}
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function ToObject(val) {
+		if (val == null) {
+			throw new TypeError('Object.assign cannot be called with null or undefined');
+		}
+
+		return Object(val);
+	}
+
+	module.exports = Object.assign || function (target, source) {
+		var from;
+		var keys;
+		var to = ToObject(target);
+
+		for (var s = 1; s < arguments.length; s++) {
+			from = arguments[s];
+			keys = Object.keys(Object(from));
+
+			for (var i = 0; i < keys.length; i++) {
+				to[keys[i]] = from[keys[i]];
+			}
+		}
+
+		return to;
+	};
+
+
+/***/ },
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {module.exports = 'ontouchstart' in global || (global.DocumentTouch && document instanceof DocumentTouch)
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var React    = __webpack_require__(1)
+	  , hasOwn   = Object.prototype.hasOwnProperty
+	  , version  = React.version.split('.').map(parseFloat)
+	  , RESERVED = {
+	      className:  resolve(joinClasses),
+	      children:   function(){},
+	      key:        function(){},
+	      ref:        function(){},
+	      style:      resolve(extend)
+	    };
+
+	module.exports = function cloneWithProps(child, props) {
+	  var newProps = mergeProps(props, child.props);
+
+	  if (!hasOwn.call(newProps, 'children') && hasOwn.call(child.props, 'children'))
+	    newProps.children = child.props.children;
+
+	  // < 0.11
+	  if (version[0] === 0 && version[1] < 11)
+	    return child.constructor.ConvenienceConstructor(newProps);
+	  
+	  // 0.11
+	  if (version[0] === 0 && version[1] === 11)
+	    return child.constructor(newProps);
+
+	  // 0.12
+	  else if (version[0] === 0 && version[1] === 12){
+	    MockLegacyFactory.isReactLegacyFactory = true
+	    MockLegacyFactory.type = child.type
+	    return React.createElement(MockLegacyFactory, newProps);
+	  }
+
+	  // 0.13+
+	  return React.createElement(child.type, newProps);
+
+	  function MockLegacyFactory(){}
+	}
+
+	function mergeProps(currentProps, childProps) {
+	  var newProps = extend(currentProps), key
+
+	  for (key in childProps) {
+	    if (hasOwn.call(RESERVED, key) )
+	      RESERVED[key](newProps, childProps[key], key)
+
+	    else if ( !hasOwn.call(newProps, key) )
+	      newProps[key] = childProps[key];
+	  }
+	  return newProps
+	}
+
+	function resolve(fn){
+	  return function(src, value, key){
+	    if( !hasOwn.call(src, key)) src[key] = value
+	    else src[key] = fn(src[key], value)
+	  }
+	}
+
+	function joinClasses(a, b){
+	  if ( !a ) return b || ''
+	  return a + (b ? ' ' + b : '')
+	}
+
+	function extend() {
+	  var target = {};
+	  for (var i = 0; i < arguments.length; i++) 
+	    for (var key in arguments[i]) if (hasOwn.call(arguments[i], key)) 
+	      target[key] = arguments[i][key]   
+	  return target
+	}
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var React     = __webpack_require__(1)
+	var assign    = __webpack_require__(6)
+	var normalize = __webpack_require__(7)
+
+	function emptyFn(){}
+
+	var ALIGN = (function(){
+	    var MAP = {
+	        left  : 'flex-start',
+	        start : 'flex-start',
+	        center: 'center',
+	        right : 'flex-end',
+	        end   : 'flex-end'
+	    }
+
+	    return function(value){
+	        return MAP[value] || value
+	    }
+	})()
+
+	var PropTypes    = React.PropTypes
+	var DISPLAY_NAME = 'ReactButton'
+
+	module.exports = React.createClass({
+
+	    displayName: DISPLAY_NAME,
+
+	    propTypes: {
+	        fn: PropTypes.func,
+	        onClick: PropTypes.func,
+
+	        primary: PropTypes.bool,
+	        disabled: PropTypes.bool,
+	        pressed: PropTypes.bool,
+	        defaultPressed: PropTypes.bool,
+
+	        href: PropTypes.string,
+	        align: PropTypes.string,
+
+	        style: PropTypes.object,
+	        activeStyle: PropTypes.object,
+	        overStyle: PropTypes.object,
+	        focusedStyle: PropTypes.object,
+	        disabledStyle: PropTypes.object,
+
+	        className       : PropTypes.string,
+	        activeClassName : PropTypes.string,
+	        overClassName   : PropTypes.string,
+	        focusedClassName: PropTypes.string,
+	        disabledClassName: PropTypes.string
+	    },
+
+	    getDefaultProps: function() {
+	        return {
+	            isReactButton: true,
+	            'data-display-name': DISPLAY_NAME,
+
+	            align: 'center',
+
+	            themed: true,
+
+	            defaultStyle: {
+	                boxSizing     : 'border-box',
+
+	                display       : 'inline-flex',
+	                alignItems    : 'center',
+	                justifyContent: 'center',
+
+	                userSelect    : 'none',
+	                textDecoration: 'none',
+	                cursor        : 'pointer',
+	                overflow      : 'hidden',
+
+	                //theme properties
+	                //fontFamily: 'Arial',
+	                // fontSize  : '0.9em',
+	                whiteSpace: 'nowrap',
+	                padding   : 5,
+	                margin    : 2
+	            },
+
+	            defaultThemeStyle: {
+	                border    : '1px solid rgb(218, 218, 218)',
+	                color     : 'rgb(120, 120, 120)',
+	            },
+
+	            defaultPrimaryStyle: {
+	                //theme properties
+	                background: 'rgb(103, 175, 233)',
+	                color: 'white'
+	            },
+
+	            defaultOverStyle: {
+	                //theme properties
+	                background: 'rgb(118, 181, 231)',
+	                color: 'white'
+	            },
+
+	            defaultPressedStyle: {
+	                //theme properties
+	                background: 'rgb(90, 152, 202)',
+	                color: 'white'
+	            },
+
+	            defaultDisabledPrimaryStyle: {
+	                //theme properties
+	                background: 'rgb(116, 144, 166)',
+	                color: 'rgb(190, 190, 190)'
+	            },
+
+	            defaultDisabledStyle: {
+	                cursor: 'default',
+
+	                //theme properties
+	                background: 'rgb(221, 221, 221)',
+	                color: 'rgb(128, 128, 128)'
+	            },
+
+	            defaultLabelStyle: {
+	                display: 'inline-block'
+	            },
+
+	            ellipsisLabelStyle: {
+	                textOverflow: 'ellipsis',
+	                overflow: 'hidden',
+	                whiteSpace: 'nowrap'
+	            },
+
+	            ellipsis: true,
+
+	            href: ''
+	        }
+	    },
+
+	    getInitialState: function() {
+	        return {
+	            mouseOver: false,
+	            active: false,
+	            defaultPressed: this.props.defaultPressed
+	        }
+	    },
+
+	    isFocused: function() {
+	        return this.state.focused
+	    },
+
+	    isActive: function() {
+	        return !!this.state.active
+	    },
+
+	    render: function(){
+	        var props = this.prepareProps(this.props, this.state)
+
+	        return (props.factory || React.DOM.a)(props)
+	    },
+
+	    prepareProps: function(thisProps, state) {
+
+	        var props = {}
+
+	        assign(props, thisProps)
+
+	        var pressed = props.pressed != null? props.pressed: state.defaultPressed
+
+	        if (pressed != null){
+	            props.pressed = pressed
+	        }
+
+	        props.active    = !!state.active
+	        props.mouseOver = props.overState == null? !!state.mouseOver: props.overState
+	        props.focused = !!state.focused
+
+	        props['data-active']  = props.active
+	        props['data-over']    = props.mouseOver
+	        props['data-focused'] = props.focused
+	        props['data-pressed'] = props.pressed
+	        props['data-primary'] = props.primary
+
+	        props.style     = this.prepareStyle(props, state)
+	        props.className = this.prepareClassName(props, state)
+	        props.children = this.prepareChildren(props)
+
+	        var handleClick = this.handleClick.bind(this, props)
+
+	        props.onClick = typeof props.interceptClick == 'function'?
+	                            props.interceptClick.bind(this, handleClick):
+	                            handleClick
+
+	        props.onFocus      = this.handleFocus.bind(this, props)
+	        props.onBlur       = this.handleBlur.bind(this, props)
+	        props.onMouseEnter = this.handleMouseEnter.bind(this, props)
+	        props.onMouseLeave = this.handleMouseLeave.bind(this, props)
+	        props.onMouseDown  = this.handleMouseDown.bind(this, props)
+	        props.onMouseUp    = this.handleMouseUp.bind(this, props)
+
+	        return props
+	    },
+
+	    handleFocus: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            focused: true
+	        })
+
+	        ;(this.props.onFocus || emptyFn)(event)
+	    },
+
+	    handleBlur: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            focused: false
+	        })
+
+	        ;(this.props.onBlur || emptyFn)(event)
+	    },
+
+	    handleClick: function(props, event) {
+	        if (!props.href || props.disabled){
+	            event.preventDefault()
+	        }
+
+	        if (props.disabled){
+	            return
+	        }
+
+	        if (props.pressed != null){
+	            var newPressed = !props.pressed
+
+	            if (this.props.pressed == null){
+	                this.setState({
+	                    defaultPressed: newPressed
+	                })
+	            }
+
+	            ;(this.props.onToggle || emptyFn)(newPressed, event)
+	        }
+
+	        ;(this.props.onClick || emptyFn)(event)
+	        ;(this.props.fn || emptyFn)(props, event)
+	    },
+
+	    handleMouseEnter: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            mouseOver: true
+	        })
+
+	        ;(this.props.onMouseEnter || emptyFn)(event)
+	    },
+
+	    handleMouseLeave: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            mouseOver: false
+	        })
+
+	        ;(this.props.onMouseLeave || emptyFn)(event)
+	    },
+
+	    handleMouseUp: function(props, event) {
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            active: false
+	        })
+
+	        window.removeEventListener('mouseup', this.handleMouseUp)
+
+	        ;(this.props.onMouseUp || emptyFn)(event)
+	        ;(this.props.onDeactivate || emptyFn)(event)
+	    },
+
+	    handleMouseDown: function(props, event) {
+
+	        if (props.disabled){
+	            return
+	        }
+
+	        this.setState({
+	            active: true
+	        })
+
+	        window.addEventListener('mouseup', this.handleMouseUp)
+
+	        ;(this.props.onMouseDown || emptyFn)(event)
+	        ;(this.props.onActivate || emptyFn)(event)
+	    },
+
+	    prepareChildren: function(props) {
+	        var children = props.children
+
+	        if (props.label){
+
+	            var labelProps = assign({}, props.defaultLabelProps, props.labelProps)
+	            var defaultLabelStyle = assign({}, props.defaultLabelStyle)
+
+	            if (props.ellipsis){
+	                assign(defaultLabelStyle, props.ellipsisLabelStyle)
+	            }
+
+	            var labelStyle = assign({}, defaultLabelStyle, labelProps.style, props.labelStyle)
+
+	            labelProps.style = labelStyle
+
+	            children = React.createElement("span", React.__spread({},  labelProps), 
+	                props.label
+	            )
+	        }
+
+	        if (typeof this.props.renderChildren === 'function'){
+	            return this.props.renderChildren(children)
+	        }
+
+	        return children
+	    },
+
+	    prepareClassName: function(props) {
+
+	        var className = props.className || ''
+
+	        if (props.disabled){
+	            if (props.disabledClassName){
+	                className += ' ' + props.disabledClassName
+	            }
+	        } else {
+	            if (props.active && props.activeClassName){
+	                className += ' ' + props.activeClassName
+	            }
+
+	            if (props.pressed && props.pressedClassName){
+	                className += ' ' + props.pressedClassName
+	            }
+
+	            if (props.mouseOver && props.overClassName){
+	                className += ' ' + props.overClassName
+	            }
+
+	            if (props.focused && props.focusedClassName){
+	                className += ' ' + props.focusedClassName
+	            }
+	        }
+
+	        if (props.primary && props.primaryClassName){
+	            className += ' ' + props.primaryClassName
+	        }
+
+	        return className
+	    },
+
+	    prepareStyle: function(props) {
+	        var style = {}
+	        var defaultStyle = assign({}, props.defaultStyle)
+
+	        if (props.themed){
+	            assign(defaultStyle, props.defaultThemeStyle)
+	        }
+
+	        if (props.block){
+	            defaultStyle.display = 'flex'
+	        }
+
+	        defaultStyle.justifyContent = ALIGN(props.align)
+
+	        //defaultStyle
+	        assign(style, defaultStyle)
+
+	        if (props.themed){
+
+	            if (props.disabled){
+	                assign(style,
+	                    props.defaultDisabledStyle,
+	                    props.primary && props.defaultDisabledPrimaryStyle
+	                )
+	            } else {
+	                assign(style,
+	                    //DEFAULTS
+	                    props.focused   && props.defaultFocusedStyle,
+	                    props.primary   && props.defaultPrimaryStyle,
+	                    props.mouseOver && props.defaultOverStyle,
+	                    props.pressed   && props.defaultPressedStyle,
+	                    props.active    && props.defaultActiveStyle
+	                )
+
+	                assign(style,
+	                    //combinations
+	                    props.mouseOver && props.primary && props.defaultOverPrimaryStyle,
+	                    props.pressed   && props.primary && props.defaultPressedPrimaryStyle,
+	                    props.mouseOver && props.pressed && props.defaultOverPressedStyle
+	                )
+	            }
+	        }
+
+	        ;(props.onDefaultStylesApplied || emptyFn)(style)
+	        ;(props.onDefaultStyleReady    || emptyFn)(style)
+
+	        //style
+	        assign(style, props.style)
+
+	        if (props.disabled){
+	            assign(style,
+	                props.disabledStyle,
+	                props.primary && props.disabledPrimaryStyle
+	            )
+
+	        } else {
+	            assign(style,
+	                //NON-DEFAULTS
+	                props.focused   && props.focusedStyle,
+	                props.primary   && props.primaryStyle,
+	                props.mouseOver && props.overStyle,
+	                props.pressed   && props.pressedStyle,
+	                props.active    && props.activeStyle
+	            )
+
+	            assign(style,
+	                //combinations
+	                props.mouseOver && props.primary && props.overPrimaryStyle,
+	                props.pressed   && props.primary && props.pressedPrimaryStyle,
+	                props.mouseOver && props.pressed && props.overPressedStyle
+	            )
+
+	        }
+
+	        ;(props.onStylesApplied || emptyFn)(style, props)
+	        ;(props.onStyleReady    || emptyFn)(style, props)
+
+	        return normalize(style)
+	    }
+	})
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var MenuClass = __webpack_require__(27)
+
+	var MenuItem      = __webpack_require__(30)
+	var MenuItemCell  = __webpack_require__(28)
+	var MenuSeparator = __webpack_require__(29)
+
+	MenuClass.Item      = MenuItem
+	MenuClass.Item.Cell = MenuItemCell
+	MenuClass.ItemCell  = MenuItemCell
+	MenuClass.Separator = MenuSeparator
+
+	module.exports = MenuClass
+
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	module.exports = function(str){
+		return str?
+				str.charAt(0).toUpperCase() + str.slice(1):
+				''
+	}
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var toUpperFirst = __webpack_require__(23)
+	var prefixes     = ["ms", "Moz", "Webkit", "O"]
+
+	var el = __webpack_require__(25)
+
+	var PREFIX
+
+	module.exports = function(key){
+
+		if (PREFIX){
+			return PREFIX
+		}
+
+		var i = 0
+		var len = prefixes.length
+		var tmp
+		var prefix
+
+		for (; i < len; i++){
+			prefix = prefixes[i]
+			tmp = prefix + toUpperFirst(key)
+
+			if (typeof el.style[tmp] != 'undefined'){
+				return PREFIX = prefix
+			}
+		}
+	}
+
+/***/ },
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {'use strict';
+
+	var el
+
+	if(!!global.document){
+	  	el = global.document.createElement('div')
+	}
+
+	module.exports = el
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var toUpperFirst = __webpack_require__(23)
+	var getPrefix    = __webpack_require__(24)
+	var properties   = __webpack_require__(16)
+
+	/**
+	 * Returns the given key prefixed, if the property is found in the prefixProps map.
+	 *
+	 * Does not test if the property supports the given value unprefixed.
+	 * If you need this, use './getPrefixed' instead
+	 */
+	module.exports = function(key, value){
+
+		if (!properties[key]){
+			return key
+		}
+
+		var prefix = getPrefix(key)
+
+		return prefix?
+					prefix + toUpperFirst(key):
+					key
+	}
+
+/***/ },
+/* 27 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	function emptyFn(){}
+
+	var React      = __webpack_require__(1)
+	var assign     = __webpack_require__(40)
+	var Region     = window.Region = __webpack_require__(43)
+	var inTriangle = __webpack_require__(44)
+	var hasTouch = __webpack_require__(45)
+
+	var normalize = __webpack_require__(46)
+
+	var getMenuOffset = __webpack_require__(31)
+	var getConstrainRegion = __webpack_require__(33)
+	var getItemStyleProps = __webpack_require__(34)
+	var renderSubMenu     = __webpack_require__(35)
+	var renderChildren    = __webpack_require__(36)
+	var prepareItem       = __webpack_require__(37)
+
+	var propTypes = __webpack_require__(38)
+	var ScrollContainer = __webpack_require__(39)
+
+	var MenuClass = React.createClass({
+
+	    displayName: 'Menu',
+
+	    propTypes: propTypes,
+
+	    getDefaultProps: function(){
+
+	        return {
+	            isMenu: true,
+	            enableScroll: true,
+	            constrainTo: true,
+	            interactionStyles: true,
+	            defaultStyle: {
+	                display : 'inline-block',
+	                boxSizing: 'border-box',
+	                position: 'relative',
+
+	                //theme props
+	                border: '1px solid rgb(218, 218, 218)',
+	                color: 'rgb(120, 120, 120)'
+	                // ,
+	                // boxShadow: 'rgb(136, 136, 136) 0px 0px 6px'
+	            },
+	            defaultSubMenuStyle: {
+	                position: 'absolute'
+	            },
+	            scrollerProps: {
+	            },
+	            columns: ['label'],
+	            items: null,
+	            visible: true,
+	            subMenuConstrainMargin: 10,
+
+	            defaultItemStyle: {},
+	            itemStyle: {},
+	            defaultItemOverStyle: {},
+	            itemOverStyle: {},
+	            defaultItemDisabledStyle: {},
+	            itemDisabledStyle: {},
+	            defaultItemExpandedStyle: {},
+	            itemExpandedStyle: {},
+
+	            defaultCellStyle: {},
+	            cellStyle: {},
+
+	            stopClickPropagation: true
+	        }
+	    },
+
+	    getInitialState: function() {
+	        return {
+	            mouseOver: false
+	        }
+	    },
+
+	    componentDidMount: function() {
+	        ;(this.props.onMount || emptyFn)(this)
+
+	        if ((this.props.constrainTo || this.props.alignTo) && !this.props.subMenu){
+	            setTimeout(function(){
+
+	                if (!this.isMounted()){
+	                    return
+	                }
+	                var props = this.props
+
+	                var scrollRegion = Region.from(this.refs.scrollContainer.getDOMNode())
+	                var domNode      = this.getDOMNode()
+	                var domRegion    = Region.from(domNode)
+	                var paddingSize  = domRegion.height
+
+	                var actualHeight = scrollRegion.height + paddingSize
+	                //get clientHeight of this dom node, so as to account for padding
+
+	                //build the actual region of the menu
+	                var actualRegion = Region({
+	                    left  : domRegion.left,
+	                    right : domRegion.right,
+
+	                    top   : domRegion.top,
+	                    bottom: domRegion.top + actualHeight
+	                })
+
+	                var constrainRegion = props.constrainTo?
+	                                        getConstrainRegion(props.constrainTo):
+	                                        null
+
+	                var newState
+
+	                if (props.alignTo){
+	                    var parentRegion = Region.from(domNode.parentNode)
+	                    var alignRegion = Region.from(props.alignTo)
+
+	                    actualRegion.alignTo(alignRegion, props.alignPositions, {
+	                        offset: props.alignOffset,
+	                        constrain: constrainRegion
+	                    })
+
+	                    var newTop = actualRegion.top - parentRegion.top
+	                    var newLeft = actualRegion.left - parentRegion.left
+
+	                    newState = {
+	                        style: {
+	                            left: newLeft,
+	                            top : newTop
+	                        }
+	                    }
+	                }
+
+	                if (constrainRegion){
+	                    newState = newState || {}
+
+	                    if (actualRegion.bottom > constrainRegion.bottom){
+	                        newState.maxHeight = constrainRegion.bottom - actualRegion.top - paddingSize
+	                    }
+	                }
+
+	                newState && this.setState(newState)
+	            }.bind(this), 0)
+	        }
+	    },
+
+	    prepareProps: function(thisProps, state) {
+	        var props = {}
+
+	        assign(props, this.props)
+
+	        props.style     = this.prepareStyle(props, state)
+	        props.className = this.prepareClassName(props)
+
+	        props.itemStyleProps = getItemStyleProps(props, state)
+	        props.children  = this.prepareChildren(props, state)
+
+	        props.scrollerProps = this.prepareScrollerProps(props)
+
+	        return props
+	    },
+
+	    prepareScrollerProps: function(props) {
+	        return assign({}, props.scrollerProps)
+	    },
+
+	    prepareChildren: function(props, state){
+
+	        var children = props.children
+
+	        if (props.items){
+	            children = props.items.map(this.prepareItem.bind(this, props, state))
+	        }
+
+	        return children
+	    },
+
+	    prepareItem: prepareItem,
+
+	    prepareClassName: function(props) {
+	        var className = props.className || ''
+
+	        className += ' z-menu'
+
+	        return className
+	    },
+
+	    prepareStyle: function(props, state) {
+	        var subMenuStyle = props.subMenu?
+	                            props.defaultSubMenuStyle:
+	                            null
+
+	        var style = assign({}, props.defaultStyle, subMenuStyle, props.style)
+
+	        if (!props.visible){
+	            style.display = 'none'
+	        }
+
+	        if (props.absolute){
+	            style.position = 'absolute'
+	        }
+
+	        if (props.at){
+	            var isArray = Array.isArray(props.at)
+	            var coords = {
+	                left: isArray?
+	                        props.at[0]:
+	                        props.at.left === undefined?
+	                            props.at.x || props.at.pageX:
+	                            props.at.left,
+
+	                top: isArray?
+	                        props.at[1]:
+	                        props.at.top === undefined?
+	                            props.at.y || props.at.pageY:
+	                            props.at.top
+	            }
+
+	            assign(style, coords)
+	        }
+
+	        if (state.style){
+	            assign(style, state.style)
+	        }
+
+	        if (!this.isMounted() && (props.constrainTo || props.alignTo) && !props.subMenu){
+	            //when a top menu is initially rendered (and should be constrained or has alignTo)
+	            //we show it hidden initially, so we can safely constrain and/or align it
+	            style.visibility = 'hidden'
+	            style.maxHeight  = 0
+	            style.overflow   = 'hidden'
+	        }
+
+	        return normalize(style)
+	    },
+
+	    /////////////// RENDERING LOGIC
+
+	    renderSubMenu: renderSubMenu,
+
+	    render: function() {
+	        var state = this.state
+	        var props = this.prepareProps(this.props, state)
+
+	        var menu     = this.renderSubMenu(props, state)
+	        var children = this.renderChildren(props, state)
+
+	        return (
+	            React.createElement("div", React.__spread({},  props), 
+	                menu, 
+	                React.createElement(ScrollContainer, {
+	                    onMouseEnter: this.handleMouseEnter, 
+	                    onMouseLeave: this.handleMouseLeave, 
+	                    scrollerProps: props.scrollerProps, 
+	                    ref: "scrollContainer", enableScroll: props.enableScroll, maxHeight: state.maxHeight || props.maxHeight}, 
+	                    React.createElement("table", {ref: "table", style: {borderSpacing: 0}}, 
+	                        React.createElement("tbody", null, 
+	                            children
+	                        )
+	                    )
+	                )
+	            )
+	        )
+	    },
+
+	    renderChildren: renderChildren,
+
+	    ////////////////////////// BEHAVIOUR LOGIC
+
+	    handleMouseEnter: function() {
+	        this.setState({
+	            mouseInside: true
+	        })
+
+	        this.onActivate()
+	    },
+
+	    handleMouseLeave: function() {
+	        this.setState({
+	            mouseInside: false
+	        })
+
+	        if (!this.state.menu && !this.state.nextItem){
+	        // if (!this.state.nextItem){
+	            this.onInactivate()
+	        }
+	    },
+
+	    onActivate: function() {
+	        if (!this.state.activated){
+	            // console.log('activate')
+	            this.setState({
+	                activated: true
+	            })
+
+	            ;(this.props.onActivate || emptyFn)()
+	        }
+	    },
+
+	    onInactivate: function() {
+	        if (this.state.activated){
+
+	            this.setState({
+	                activated: false
+	            })
+
+	            // console.log('inactivate')
+	            ;(this.props.onInactivate || emptyFn)()
+	        }
+	    },
+
+	    //we also need mouseOverSubMenu: Boolean
+	    //since when from a submenu we move back to a parent menu, we may move
+	    //to a different menu item than the one that triggered the submenu
+	    //so we should display another submenu
+	    handleSubMenuMouseEnter: function() {
+	        this.setState({
+	            mouseOverSubMenu: true
+	        })
+	    },
+
+	    handleSubMenuMouseLeave: function() {
+	        this.setState({
+	            mouseOverSubMenu: false
+	        })
+	    },
+
+	    isSubMenuActive: function() {
+	        return this.state.subMenuActive
+	    },
+
+	    onSubMenuActivate: function() {
+	        this.setState({
+	            subMenuActive: true
+	        })
+	    },
+
+	    onSubMenuInactivate: function() {
+	        var ts = +new Date()
+
+	        var nextItem      = this.state.nextItem
+	        var nextTimestamp = this.state.nextTimestamp || 0
+
+	        this.setState({
+	            subMenuActive: false,
+	            timestamp       : ts
+	        }, function(){
+
+	            setTimeout(function(){
+	                if (ts != this.state.timestamp || (nextItem && (ts - nextTimestamp < 100))){
+	                    //a menu show has occured in the mean-time,
+	                    //so skip hiding the menu
+	                    this.setItem(this.state.nextItem, this.state.nextOffset)
+	                    return
+	                }
+
+	                if (!this.isSubMenuActive()){
+	                    this.setItem()
+	                }
+	            }.bind(this), 10)
+
+	        })
+
+	    },
+
+	    removeMouseMoveListener: function() {
+	        if (this.onWindowMouseMove){
+	            window.removeEventListener('mousemove', this.onWindowMouseMove)
+	            this.onWindowMouseMove = null
+	        }
+	    },
+
+	    onMenuItemMouseOut: function(itemProps, leaveOffset) {
+	        if (this.state.menu){
+	            this.setupCheck(leaveOffset)
+	        }
+	    },
+
+	    /**
+	     * Called when mouseout happens on the item for which there is a submenu displayed
+	     */
+	    onMenuItemMouseOver: function(itemProps, menuOffset, entryPoint) {
+
+	        if (!this.isMounted()){
+	            return
+	        }
+
+	        var menu = itemProps.menu
+	        var ts   = +new Date()
+
+	        if (!menu){
+	            return
+	        }
+
+	        if (!this.state.menu){
+	            //there is no menu visible, so it's safe to show the menu
+	            this.setItem(itemProps, menuOffset)
+	        } else {
+	            //there is a menu visible, from the previous item that had mouse over
+	            //so we should queue this item's menu as the next menu to be shown
+	            this.setNextItem(itemProps, menuOffset)
+	        }
+	    },
+
+	    setupCheck: function(offset){
+	        if (!this.isMounted()){
+	            return
+	        }
+
+	        var tolerance = 5
+
+	        var domNode    = this.getDOMNode()
+	        var menuNode   = domNode.querySelector('.z-menu')
+
+	        if (!menuNode){
+	            return
+	        }
+
+	        var menuRegion = Region.from(menuNode)
+
+	        var x1 = menuRegion.left
+	        var y1 = menuRegion.top// - tolerance
+
+	        var x2 = menuRegion.left
+	        var y2 = menuRegion.bottom// + tolerance
+
+	        if (this.subMenuPosition == 'left'){
+	            x1 = menuRegion.right
+	            x2 = menuRegion.right
+	        }
+
+	        var x3 = offset.x + (this.subMenuPosition == 'left'? tolerance: -tolerance)
+	        var y3 = offset.y
+
+	        var triangle = [
+	            [x1, y1],
+	            [x2, y2],
+	            [x3, y3]
+	        ]
+
+	        this.removeMouseMoveListener()
+
+	        this.onWindowMouseMove = function(event){
+
+	            var point = [event.pageX, event.pageY]
+
+	            if (!inTriangle(point, triangle)){
+
+	                this.removeMouseMoveListener()
+
+	                if (!this.state.mouseOverSubMenu){
+	                    //the mouse is not over a sub menu item
+	                    //
+	                    //so we show a menu of a sibling item, or hide the menu
+	                    //if no sibling item visited
+	                    this.setItem(this.state.nextItem, this.state.nextOffset)
+	                }
+	            }
+	        }.bind(this)
+
+	        window.addEventListener('mousemove', this.onWindowMouseMove)
+	    },
+
+	    setNextItem: function(itemProps, menuOffset) {
+
+	        var ts = +new Date()
+
+	        this.setState({
+	            timestamp        : ts,
+
+	            nextItem     : itemProps,
+	            nextOffset   : menuOffset,
+	            nextTimestamp: +new Date()
+	        })
+	    },
+
+	    setItem: function(itemProps, offset) {
+
+	        var menu = itemProps?
+	                        itemProps.menu:
+	                        null
+
+	        // if (!menu){
+	        //     return
+	        // }
+
+	        this.removeMouseMoveListener()
+
+	        if (!this.isMounted()){
+	            return
+	        }
+
+	        if (!menu && !this.state.mouseInside){
+	            this.onInactivate()
+	        }
+
+	        this.setState({
+	            itemProps    : itemProps,
+
+	            menu         : menu,
+	            menuOffset   : offset,
+	            timestamp    : +new Date(),
+
+	            nextItem     : null,
+	            nextOffset   : null,
+	            nextTimestamp: null
+	        })
+	    },
+
+	    onMenuItemExpanderClick: function(event) {
+	        event.nativeEvent.expanderClick = true
+	    },
+
+	    onMenuItemClick: function(props, index, event) {
+
+	        var stopped = event.isPropagationStopped()
+
+	        props.stopClickPropagation && event.stopPropagation()
+
+	        if (hasTouch && event && event.nativeEvent && event.nativeEvent.expanderClick){
+
+	            var offset = {
+	                x: event.pageX,
+	                y: event.pageY
+	            }
+
+	            var menuOffset = getMenuOffset(event.currentTarget)
+	            this.onMenuItemMouseOver(props, menuOffset, offset)
+
+	            return
+	        }
+
+	        if (!stopped){
+	            ;(this.props.onClick || emptyFn)(event, props, index)
+	        }
+	    }
+	})
+
+	module.exports = MenuClass
+
+/***/ },
+/* 28 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var React  = __webpack_require__(1)
+	var assign =__webpack_require__(40)
+	var arrowStyle =__webpack_require__(42)
+
+	function expanderStyle(){
+	    var style = arrowStyle('right', {
+	        width: 8,
+	        height: 4
+	    })
+
+	    style.display = 'inline-block'
+
+	    return style
+	}
+
+	var MenuItemCell = React.createClass({
+
+	    displayName: 'ReactMenuItemCell',
+
+	    getDefaultProps: function() {
+	        return {
+	            defaultStyle: {
+	                padding: 5,
+	                whiteSpace: 'nowrap'
+	            }
+	        }
+	    },
+
+	    render: function() {
+	        var props    = this.prepareProps(this.props)
+	        var children = props.children
+
+	        if (props.expander){
+	            children = props.expander === true? '›': props.expander
+	        }
+
+	        return (
+	            React.createElement("td", React.__spread({},  props), 
+	                children
+	            )
+	        )
+	    },
+
+	    prepareProps: function(thisProps) {
+	        var props = {}
+
+	        assign(props, thisProps)
+
+	        props.style = this.prepareStyle(props)
+
+	        return props
+	    },
+
+	    prepareStyle: function(props) {
+	        var style = {}
+
+	        assign(style, props.defaultStyle, props.style)
+
+	        // if (props.itemIndex != props.itemCount - 1){
+	        //     style.paddingBottom = 0
+	        // }
+
+	        return style
+	    }
+	})
+
+	module.exports = MenuItemCell
+
+/***/ },
+/* 29 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var React  = __webpack_require__(1)
+	var assign = __webpack_require__(40)
+
+	var emptyFn = function(){}
+
+	module.exports = React.createClass({
+
+	    displayName: 'ReactMenuSeparator',
+
+	    getDefaultProps: function() {
+	        return {
+	            defaultStyle: {
+	                cursor: 'auto'
+	            },
+	            border: '1px solid gray'
+	        }
+	    },
+
+	    render: function() {
+	        var props = this.prepareProps(this.props)
+
+	        return React.createElement("tr", React.__spread({},  props), React.createElement("td", {colSpan: 10}))
+	    },
+
+	    prepareProps: function(thisProps) {
+	        var props = {}
+
+	        assign(props, thisProps)
+
+	        props.style = this.prepareStyle(props)
+	        props.className = this.prepareClassName(props)
+
+	        return props
+	    },
+
+	    prepareClassName: function(props) {
+	        var className = props.className || ''
+
+	        className += ' menu-separator'
+
+	        return className
+	    },
+
+	    prepareStyle: function(props) {
+	        var style = {}
+
+	        assign(style, props.defaultStyle, {
+	            borderTop: props.border
+	        }, props.style)
+
+	        return style
+	    }
+	})
+
+/***/ },
+/* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var React  = __webpack_require__(1)
+	var assign = __webpack_require__(40)
+	var EVENT_NAMES = __webpack_require__(41)
+	var getMenuOffset = __webpack_require__(31)
+
+	var prepareChildren = __webpack_require__(32)
+	var Menu = __webpack_require__(27)
+	var MenuItemCell = __webpack_require__(28)
+
+	var emptyFn = function(){}
+
+	var MenuItem = React.createClass({
+
+	    displayName: 'ReactMenuItem',
+
+	    getInitialState: function() {
+	        return {}
+	    },
+
+	    getDefaultProps: function() {
+	        return {
+	            isMenuItem: true,
+	            interactionStyles: true,
+	            defaultStyle: {
+	                cursor: 'pointer',
+	                background: 'white'
+	            },
+	            defaultOverStyle: {
+	                background: 'rgb(118, 181, 231)',
+	                color: 'white'
+	            },
+	            defaultActiveStyle: {
+	                background: 'rgb(118, 181, 231)',
+	            },
+	            defaultExpandedStyle: {
+	                background: 'rgb(154, 196, 229)',
+	                color: 'white'
+	            },
+	            defaultDisabledStyle: {
+	                color: 'gray',
+	                cursor: 'default'
+	            },
+	            expander: '›'
+	        }
+	    },
+
+	    render: function() {
+	        var props = this.prepareProps(this.props, this.state)
+
+	        return React.createElement("tr", React.__spread({},  props))
+	    },
+
+	    prepareProps: function(thisProps, state) {
+	        var props = {}
+
+	        assign(props, thisProps)
+
+	        props.mouseOver = !!state.mouseOver
+	        props.active    = !!state.active
+	        props.disabled    = !!props.disabled
+
+	        props.style     = this.prepareStyle(props)
+	        props.className = this.prepareClassName(props)
+
+	        props.children  = this.prepareChildren(props)
+
+	        props.onClick      = this.handleClick.bind(this, props)
+	        props.onMouseEnter = this.handleMouseEnter.bind(this, props)
+	        props.onMouseLeave = this.handleMouseLeave.bind(this, props)
+	        props.onMouseDown  = this.handleMouseDown
+	        props.onMouseMove  = this.handleMouseMove
+
+	        return props
+	    },
+
+	    handleClick: function(props, event) {
+
+	        if (props.disabled){
+	            event.stopPropagation()
+	            return
+	        }
+
+	        ;(this.props.onClick || this.props.fn || emptyFn)(props, props.index, event)
+	    },
+
+	    handleMouseMove: function(event){
+
+	    },
+
+	    handleMouseDown: function(event) {
+	        // event.preventDefault()
+
+	        var mouseUpListener = function(){
+	            this.setState({
+	                active: false
+	            })
+	            window.removeEventListener('mouseup', mouseUpListener)
+	        }.bind(this)
+
+	        window.addEventListener('mouseup', mouseUpListener)
+
+	        this.setState({
+	            active: true
+	        })
+	    },
+
+	    showMenu: function(menu, props) {
+
+	        props.showMenu(menu, offset)
+	    },
+
+	    handleMouseEnter: function(props, event) {
+
+	        if (props.disabled){
+	            return
+	        }
+
+	        var offset = {
+	            x: event.pageX,
+	            y: event.pageY
+	        }
+
+	        this.setState({
+	            mouseOver: true
+	        })
+
+	        if (props.onMenuItemMouseOver){
+
+	            var menuOffset
+
+	            if (props.menu){
+	                // console.log(props);
+	                menuOffset = getMenuOffset(this.getDOMNode())
+	            }
+
+	            // console.log(menuOffset, offset);
+	            props.onMenuItemMouseOver(props, menuOffset, offset)
+	        }
+	    },
+
+	    handleMouseLeave: function(props, event) {
+
+	        if (props.disabled){
+	            return
+	        }
+
+	        var offset = {
+	            x: event.pageX,
+	            y: event.pageY
+	        }
+
+	        if (this.isMounted()){
+	            this.setState({
+	                active: false,
+	                mouseOver: false
+	            })
+	        }
+
+	        if (props.onMenuItemMouseOut){
+	            props.onMenuItemMouseOut(props, offset)
+	        }
+	    },
+
+	    prepareChildren: prepareChildren,
+
+	    prepareClassName: function(props) {
+	        var className = props.className || ''
+
+	        className += ' menu-row'
+
+	        if (props.disabled){
+	            className += ' disabled ' + (props.disabledClassName || '')
+	        } else {
+
+	            if (props.mouseOver){
+	                className += ' over ' + (props.overClassName || '')
+	            }
+
+	            if (props.active){
+	                className += ' active ' + (props.activeClassName || '')
+	            }
+
+	            if (props.expanded){
+	                className += ' expanded ' + (props.expandedClassName || '')
+	            }
+	        }
+
+	        return className
+	    },
+
+	    prepareStyle: function(props) {
+	        var style = {}
+
+	        assign(style, props.defaultStyle, props.style)
+
+	        if (props.disabled){
+
+	            assign(style, props.defaultDisabledStyle, props.disabledStyle)
+
+	        } else {
+
+	            if (props.interactionStyles){
+	                if (props.expanded){
+	                    assign(style, props.defaultExpandedStyle, props.expandedStyle)
+	                }
+
+	                if (props.mouseOver){
+	                    assign(style, props.defaultOverStyle, props.overStyle)
+	                }
+
+	                if (props.active){
+	                    assign(style, props.defaultActiveStyle, props.activeStyle)
+	                }
+	            }
+	        }
+
+	        return style
+	    }
+	})
+
+	module.exports = MenuItem
+
+/***/ },
+/* 31 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var Region = __webpack_require__(43)
+	var selectParent = __webpack_require__(51)
+
+	module.exports = function(domNode){
+
+	    var menuRegion = Region.from(selectParent('.z-menu', domNode))
+	    var thisRegion = Region.from(domNode)
+
+	    return {
+	        // pageX : thisRegion.left,
+	        // pageY : thisRegion.top,
+
+	        left  : thisRegion.left - menuRegion.left,
+	        top   : thisRegion.top  - menuRegion.top,
+	        width : thisRegion.width,
+	        height: thisRegion.height
+	    }
+	}
+
+/***/ },
+/* 32 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var Menu         = __webpack_require__(27)
+	var MenuItemCell = __webpack_require__(28)
+	var renderCell   = __webpack_require__(47)
+	var cloneWithProps = __webpack_require__(52)
+
+	module.exports = function(props) {
+
+	    var children = []
+	    var menu
+
+	    React.Children.forEach(props.children, function(child){
+	        if (child){
+	            if (child.props && child.props.isMenu){
+	                menu = cloneWithProps(child, {
+	                    ref: 'subMenu'
+	                })
+	                menu.props.subMenu = true
+	                return
+	            }
+
+	            if (typeof child != 'string'){
+	                child = cloneWithProps(child, {
+	                    style    : props.cellStyle,
+	                    itemIndex: props.itemIndex,
+	                    itemCount: props.itemCount
+	                })
+	            }
+
+	            children.push(child)
+	        }
+	    })
+
+	    if (menu){
+	        props.menu = menu
+	        var expander = props.expander || true
+	        var expanderProps = {}
+
+	        if (expander){
+	            expanderProps.onClick = props.onExpanderClick
+	        }
+	        children.push(React.createElement(MenuItemCell, React.__spread({expander: expander},  expanderProps)))
+	    }
+
+	    return children
+	}
+
+/***/ },
+/* 33 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var Region = __webpack_require__(43)
+	var selectParent = __webpack_require__(51)
+
+	module.exports = function(constrainTo){
+	    var constrainRegion
+
+	    if (constrainTo === true){
+	        constrainRegion = Region.getDocRegion()
+	    }
+
+	    if (!constrainRegion && typeof constrainTo === 'string'){
+	        var parent = selectParent(constrainTo, this.getDOMNode())
+	        constrainRegion = Region.from(parent)
+	    }
+
+	    if (!constrainRegion && typeof constrainTo === 'function'){
+	        constrainRegion = Region.from(constrainTo())
+	    }
+
+	    return constrainRegion
+	}
+
+/***/ },
+/* 34 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var assign = __webpack_require__(40)
+
+	module.exports = function(props, state){
+
+	    var itemStyle         = assign({}, props.defaultItemStyle, props.itemStyle)
+	    var itemOverStyle     = assign({}, props.defaultItemOverStyle, props.itemOverStyle)
+	    var itemActiveStyle   = assign({}, props.defaultItemActiveStyle, props.itemActiveStyle)
+	    var itemDisabledStyle = assign({}, props.defaultItemDisabledStyle, props.itemDisabledStyle)
+	    var itemExpandedStyle = assign({}, props.defaultItemExpandedStyle, props.itemExpandedStyle)
+	    var cellStyle     = assign({}, props.defaultCellStyle, props.cellStyle)
+
+	    return {
+	        itemStyle        : itemStyle,
+	        itemOverStyle    : itemOverStyle,
+	        itemActiveStyle  : itemActiveStyle,
+	        itemDisabledStyle: itemDisabledStyle,
+	        itemExpandedStyle: itemExpandedStyle,
+	        cellStyle        : cellStyle
+	    }
+	}
+
+/***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var Region           = __webpack_require__(43)
+	var assign           = __webpack_require__(40)
+	var cloneWithProps   = __webpack_require__(52)
+	var getPositionStyle = __webpack_require__(49)
+
+	module.exports = function(props, state) {
+	    var menu = state.menu
+
+	    if (menu && this.isMounted()){
+
+	        var style = getPositionStyle.call(this, props, state)
+
+	        menu = cloneWithProps(menu, assign({
+	            ref          : 'subMenu',
+	            subMenu      : true,
+	            maxHeight    : state.subMenuMaxHeight,
+	            onActivate   : this.onSubMenuActivate,
+	            onInactivate : this.onSubMenuInactivate,
+	            scrollerProps: props.scrollerProps,
+	            constrainTo  : props.constrainTo,
+	            expander     : props.expander
+	        }, props.itemStyleProps))
+
+	        return React.createElement("div", {ref: "subMenuWrap", style: style, 
+	                onMouseEnter: this.handleSubMenuMouseEnter, 
+	                onMouseLeave: this.handleSubMenuMouseLeave
+	            }, menu)
+	    }
+	}
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var React = __webpack_require__(1)
+	var MenuItemCell = __webpack_require__(28)
+
+	var cloneWithProps = __webpack_require__(52)
+	var assign         = __webpack_require__(40)
+
+	function emptyFn(){}
+
+	module.exports = function(props, state) {
+
+	    var expandedIndex  = state.itemProps?
+	                            state.itemProps.index:
+	                            -1
+
+	    var children     = props.children
+	    var maxCellCount = 1
+	    var menuItems    = []
+
+	    React.Children.map(children, function(item){
+	        var itemProps = item.props
+
+	        menuItems.push(item)
+
+	        if (!itemProps || !itemProps.isMenuItem){
+	            return
+	        }
+
+	        var count = React.Children.count(itemProps.children)
+
+	        maxCellCount = Math.max(maxCellCount, count)
+	    })
+
+	    var itemStyleProps = props.itemStyleProps
+	    var i = -1
+	    var result = menuItems.map(function(item, index){
+	        var itemProps = item.props
+
+	        if (itemProps.isMenuItem){
+	            i++
+
+	            itemProps.onMenuItemMouseOver = this.onMenuItemMouseOver
+	            itemProps.onMenuItemMouseOut  = this.onMenuItemMouseOut
+	        }
+
+	        var children = React.Children.map(itemProps.children, function(c){ return c })
+	        var count    = React.Children.count(children)
+
+	        if (count < maxCellCount){
+	            children = children? [children]: []
+	        }
+
+	        while (count < maxCellCount){
+	            count++
+	            children.push(React.createElement(MenuItemCell, null))
+	        }
+
+	        var onClick = itemProps.onClick || emptyFn
+
+	        var cloned = cloneWithProps(item, assign({
+	            interactionStyles: props.interactionStyles,
+	            itemIndex: i,
+	            itemCount: menuItems.length,
+	            key      : index,
+	            index    : index,
+	            expanded : expandedIndex == index,
+	            children : children,
+	            expander : props.expander,
+	            onExpanderClick: this.onMenuItemExpanderClick,
+	            onClick  : function(props, index, event){
+	                onClick.apply(null, arguments)
+	                this.onMenuItemClick(props, index, event)
+	            }.bind(this)
+	        }, {
+	            style        : itemStyleProps.itemStyle,
+	            overStyle    : itemStyleProps.itemOverStyle,
+	            activeStyle  : itemStyleProps.itemActiveStyle,
+	            disabledStyle: itemStyleProps.itemDisabledStyle,
+	            expandedStyle: itemStyleProps.itemExpandedStyle,
+	            cellStyle    : itemStyleProps.cellStyle
+	        }))
+
+	        return cloned
+
+	    }, this)
+
+	    return result
+	}
+
+/***/ },
+/* 37 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var React  = __webpack_require__(1)
+	var assign = __webpack_require__(40)
+
+	var renderCells     = __webpack_require__(48)
+	var MenuItem        = __webpack_require__(30)
+	var MenuItemFactory = React.createFactory(MenuItem)
+	var MenuSeparator   = __webpack_require__(29)
+
+	module.exports = function(props, state, item, index) {
+
+	    var expandedIndex = state.itemProps?
+	                            state.itemProps.index:
+	                            -1
+
+	    if (item === '-'){
+	        return React.createElement(MenuSeparator, {key: index})
+	    }
+
+	    var className   = [props.itemClassName, item.cls, item.className]
+	                        .filter(function(x)  {return !!x;})
+	                        .join(' ')
+
+	    var itemProps = assign({
+	        className  : className,
+	        key        : index,
+	        data       : item,
+	        columns    : props.columns,
+	        expanded   : index === expandedIndex,
+	        disabled   : item.disabled,
+	        onClick    : item.onClick || item.fn
+	    }, props.itemStyleProps)
+
+	    itemProps.children = renderCells(itemProps)
+
+	    if (item.items){
+	        var Menu = __webpack_require__(27)
+	        itemProps.children.push(React.createElement(Menu, {items: item.items}))
+	    }
+
+	    return (props.itemFactory || MenuItemFactory)(itemProps)
+	}
+
+/***/ },
+/* 38 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var React = __webpack_require__(1)
+
+	module.exports = {
+	    items      : React.PropTypes.array,
+	    columns    : React.PropTypes.array,
+	    onMount    : React.PropTypes.func,
+
+	    defaultRowActiveStyle: React.PropTypes.object,
+	    defaultRowOverStyle  : React.PropTypes.object,
+	    defaultRowStyle      : React.PropTypes.object,
+
+	    rowActiveStyle: React.PropTypes.object,
+	    rowOverStyle  : React.PropTypes.object,
+	    rowStyle      : React.PropTypes.object,
+
+	    cellStyle  : React.PropTypes.object
+	}
+
+/***/ },
+/* 39 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict'
+
+	var React    = __webpack_require__(1)
+	var assign   = __webpack_require__(40)
+	var Scroller = __webpack_require__(50)
+	var F        = __webpack_require__(53)
+	var buffer   = F.buffer
+
+	function stop(event){
+	    event.preventDefault()
+	    event.stopPropagation()
+	}
+
+	module.exports = React.createClass({
+
+	    displayName: 'ReactMenuScrollContainer',
+
+	    getInitialState: function(){
+	        return {
+	            adjustScroll: true,
+	            scrollPos: 0
+	        }
+	    },
+
+	    getDefaultProps: function() {
+	        return {
+	            scrollStep : 5,
+	            scrollSpeed: 50
+	        }
+	    },
+
+	    componentWillUnmount: function(){
+	        if (this.props.enableScroll){
+	            window.removeEventListener('resize', this.onResizeListener)
+	        }
+	    },
+
+	    componentDidMount: function(){
+	        if (this.props.enableScroll){
+	            setTimeout(function(){
+	                if (!this.isMounted()){
+	                    return
+	                }
+
+	                this.adjustScroll()
+
+	                window.addEventListener('resize', this.onResizeListener = buffer(this.onWindowResize, this.props.onWindowResizeBuffer, this))
+	            }.bind(this), 0)
+	        }
+	    },
+
+	    componentDidUpdate: function(){
+	        this.props.enableScroll && this.adjustScroll()
+	    },
+
+	    onWindowResize: function(){
+	        this.adjustScroll()
+	        this.doScroll(0)
+	    },
+
+	    render: function(){
+
+	        var props = this.props
+	        var children = props.children
+
+	        if (!props.enableScroll){
+	            return children
+	        }
+
+	        var scrollStyle = {
+	            position: 'relative'
+	        }
+
+	        if (this.state.scrollPos){
+	            scrollStyle.top = -this.state.scrollPos
+	        }
+
+	        var containerStyle = {
+	            position: 'relative',
+	            overflow: 'hidden'
+	        }
+
+	        if (props.maxHeight){
+	            containerStyle.maxHeight = props.maxHeight
+	        }
+
+	        return React.createElement("div", {
+	            onMouseEnter: props.onMouseEnter, 
+	            onMouseLeave: props.onMouseLeave, 
+	            className: "z-menu-scroll-container", 
+	            style: containerStyle
+	        }, 
+	            React.createElement("div", {ref: "tableWrap", style: scrollStyle}, 
+	                children
+	            ), 
+	            this.renderScroller(props, -1), 
+	            this.renderScroller(props, 1)
+	        )
+	    },
+
+	    renderScroller: function(props, direction) {
+
+	        var onMouseDown = direction == -1?
+	                            this.handleScrollTop:
+	                            this.handleScrollBottom
+
+	        var onDoubleClick = direction == -1?
+	                                this.handleScrollTopMax:
+	                                this.handleScrollBottomMax
+
+	        var visible = direction == -1?
+	                            this.state.hasTopScroll:
+	                            this.state.hasBottomScroll
+
+	        var scrollerProps = assign({}, props.scrollerProps, {
+	            visible    : visible,
+	            side       : direction == -1? 'top': 'bottom',
+	            onMouseDown: onMouseDown,
+	            onDoubleClick: onDoubleClick
+	        })
+
+	        return React.createElement(Scroller, React.__spread({},  scrollerProps))
+	    },
+
+	    adjustScroll: function(){
+	        if (!this.props.enableScroll){
+	            return
+	        }
+
+	        if (!this.state.adjustScroll){
+	            this.state.adjustScroll = true
+	            return
+	        }
+
+	        var availableHeight = this.getAvailableHeight()
+	        var tableHeight      = this.getCurrentTableHeight()
+
+	        var state = {
+	            adjustScroll  : false,
+	            hasTopScroll : false,
+	            hasBottomScroll: false
+	        }
+
+	        if (tableHeight > availableHeight){
+	            state.maxScrollPos    = tableHeight - availableHeight
+	            state.hasTopScroll    = this.state.scrollPos !== 0
+	            state.hasBottomScroll = this.state.scrollPos != state.maxScrollPos
+	        } else {
+	            state.maxScrollPos = 0
+	            state.scrollPos    = 0
+	        }
+
+	        this.setState(state)
+	    },
+
+	    getAvailableHeight: function() {
+	        return this.getAvailableSizeDOM().clientHeight
+	    },
+
+	    getAvailableSizeDOM: function() {
+	        return this.getDOMNode()
+	    },
+
+	    getCurrentTableHeight: function() {
+	        return this.getCurrentSizeDOM().clientHeight
+	    },
+
+	    getCurrentSizeDOM: function() {
+	        return this.refs.tableWrap.getDOMNode()
+	    },
+
+	    handleScrollTop: function(event){
+	        event.preventDefault()
+	        this.handleScroll(-1)
+	    },
+
+	    handleScrollBottom: function(event){
+	        event.preventDefault()
+	        this.handleScroll(1)
+	    },
+
+	    handleScrollTopMax: function(event){
+	        stop(event)
+	        this.handleScrollMax(-1)
+	    },
+
+	    handleScrollBottomMax: function(event){
+	        stop(event)
+	        this.handleScrollMax(1)
+	    },
+
+	    handleScrollMax: function(direction){
+	        var maxPos = direction == -1?
+	                        0:
+	                        this.state.maxScrollPos
+
+	        this.setScrollPosition(maxPos)
+	    },
+
+	    handleScroll: function(direction /*1 to bottom, -1 to up*/){
+	        var mouseUpListener = function(){
+	            this.stopScroll()
+	            window.removeEventListener('mouseup', mouseUpListener)
+	        }.bind(this)
+
+	        window.addEventListener('mouseup', mouseUpListener)
+
+	        this.scrollInterval = setInterval(this.doScroll.bind(this, direction), this.props.scrollSpeed)
+	    },
+
+	    doScroll: function(direction){
+	        this.setState({
+	            scrollDirection: direction
+	        })
+
+	        var newScrollPos = this.state.scrollPos + direction * this.props.scrollStep
+
+	        this.setScrollPosition(newScrollPos)
+	    },
+
+	    setScrollPosition: function(scrollPos){
+	        if (scrollPos > this.state.maxScrollPos){
+	            scrollPos = this.state.maxScrollPos
+	        }
+
+	        if (scrollPos < 0){
+	            scrollPos = 0
+	        }
+
+	        this.setState({
+	            scrollPos: scrollPos,
+	            scrolling : true
+	        })
+	    },
+
+	    stopScroll: function(){
+	        clearInterval(this.scrollInterval)
+
+	        this.setState({
+	            scrolling: false
+	        })
+	    }
+	})
+
+/***/ },
+/* 40 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function ToObject(val) {
+		if (val == null) {
+			throw new TypeError('Object.assign cannot be called with null or undefined');
+		}
+
+		return Object(val);
+	}
+
+	module.exports = Object.assign || function (target, source) {
+		var from;
+		var keys;
+		var to = ToObject(target);
+
+		for (var s = 1; s < arguments.length; s++) {
+			from = arguments[s];
+			keys = Object.keys(Object(from));
+
+			for (var i = 0; i < keys.length; i++) {
+				to[keys[i]] = from[keys[i]];
+			}
+		}
+
+		return to;
+	};
+
+
+/***/ },
+/* 41 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	module.exports = __webpack_require__(60)?
+		{
+			onMouseDown: 'onTouchStart',
+			onMouseUp  : 'onTouchEnd',
+			onMouseMove: 'onTouchMove'
+		}:
+		{
+			onMouseDown: 'onMouseDown',
+			onMouseUp  : 'onMouseUp',
+			onMouseMove: 'onMouseMove'
+		}
+
+/***/ },
+/* 42 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	module.exports = function arrowStyle(side, config){
+
+	    var arrowSize   = config.size   || 8
+	    var arrowWidth  = config.width  || arrowSize
+	    var arrowHeight = config.height || arrowSize
+	    var arrowColor  = config.color  || 'black'
+	    var includePosition = config.includePosition
+
+	    var style
+
+	    if (side == 'up' || side == 'down'){
+
+	        style = {
+	            borderLeft : arrowWidth + 'px solid transparent',
+	            borderRight: arrowWidth + 'px solid transparent'
+	        }
+
+	        if (includePosition){
+	            style.marginTop = -Math.round(arrowHeight/2) + 'px'
+	            style.position  = 'relative'
+	            style.top       = '50%'
+	        }
+
+	        style[side === 'up'? 'borderBottom': 'borderTop'] = arrowHeight + 'px solid ' + arrowColor
+	    }
+
+	    if (side == 'left' || side == 'right'){
+
+	        style = {
+	            borderTop : arrowHeight + 'px solid transparent',
+	            borderBottom: arrowHeight + 'px solid transparent'
+	        }
+
+	        if (includePosition){
+	            style.marginLeft = -Math.round(arrowWidth/2) + 'px'
+	            style.position   = 'relative'
+	            style.left       = '50%'
+	        }
+
+	        style[side === 'left'? 'borderRight': 'borderLeft'] = arrowWidth + 'px solid ' + arrowColor
+	    }
+
+	    return style
+	}
+
+/***/ },
+/* 43 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__(54)
+
+/***/ },
+/* 44 */
+/***/ function(module, exports, __webpack_require__) {
+
+	//http://www.blackpawn.com/texts/pointinpoly/
+	module.exports = function pointInTriangle(point, triangle) {
+	    //compute vectors & dot products
+	    var cx = point[0], cy = point[1],
+	        t0 = triangle[0], t1 = triangle[1], t2 = triangle[2],
+	        v0x = t2[0]-t0[0], v0y = t2[1]-t0[1],
+	        v1x = t1[0]-t0[0], v1y = t1[1]-t0[1],
+	        v2x = cx-t0[0], v2y = cy-t0[1],
+	        dot00 = v0x*v0x + v0y*v0y,
+	        dot01 = v0x*v1x + v0y*v1y,
+	        dot02 = v0x*v2x + v0y*v2y,
+	        dot11 = v1x*v1x + v1y*v1y,
+	        dot12 = v1x*v2x + v1y*v2y
+
+	    // Compute barycentric coordinates
+	    var b = (dot00 * dot11 - dot01 * dot01),
+	        inv = b === 0 ? 0 : (1 / b),
+	        u = (dot11*dot02 - dot01*dot12) * inv,
+	        v = (dot00*dot12 - dot01*dot02) * inv
+	    return u>=0 && v>=0 && (u+v < 1)
+	}
+
+/***/ },
+/* 45 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {module.exports = 'ontouchstart' in global || (global.DocumentTouch && document instanceof DocumentTouch)
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 46 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var hasOwn      = __webpack_require__(55)
+	var getPrefixed = __webpack_require__(56)
+
+	var map      = __webpack_require__(57)
+	var plugable = __webpack_require__(58)
+
+	function plugins(key, value){
+
+		var result = {
+			key  : key,
+			value: value
+		}
+
+		;(RESULT.plugins || []).forEach(function(fn){
+
+			var tmp = map(function(res){
+				return fn(key, value, res)
+			}, result)
+
+			if (tmp){
+				result = tmp
+			}
+		})
+
+		return result
+	}
+
+	function normalize(key, value){
+
+		var result = plugins(key, value)
+
+		return map(function(result){
+			return {
+				key  : getPrefixed(result.key, result.value),
+				value: result.value
+			}
+		}, result)
+
+		return result
+	}
+
+	var RESULT = function(style){
+		var k
+		var item
+		var result = {}
+
+		for (k in style) if (hasOwn(style, k)){
+			item = normalize(k, style[k])
+
+			if (!item){
+				continue
+			}
+
+			map(function(item){
+				result[item.key] = item.value
+			}, item)
+		}
+
+		return result
+	}
+
+	module.exports = plugable(RESULT)
+
+/***/ },
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var assign = __webpack_require__(40)
+	var MenuItemCell = __webpack_require__(28)
+
+	module.exports = function(props, column) {
+	    var style = assign({}, props.defaultCellStyle, props.cellStyle)
+
+	    return React.createElement(MenuItemCell, {style: style}, props.data[column])
+	}
+
+/***/ },
+/* 48 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var renderCell = __webpack_require__(47)
+
+	module.exports = function(props) {
+	    return props.columns.map(renderCell.bind(null, props))
+	}
+
+/***/ },
+/* 49 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var Region = __webpack_require__(43)
+	var assign = __webpack_require__(40)
+	var align  = __webpack_require__(59)
+
+	module.exports = function getPositionStyle(props, state){
+	    if (!state.menu || !this.isMounted()){
+	        this.prevMenuIndex = -1
+	        return
+	    }
+
+	    var offset = state.menuOffset
+	    var left   = offset.left + offset.width
+	    var top    = offset.top
+
+	    var menuIndex = state.itemProps.index
+	    var sameMenu = this.prevMenuIndex == menuIndex
+
+	    if (this.aligning && !sameMenu){
+	        this.aligning = false
+	    }
+
+	    this.prevMenuIndex = menuIndex
+
+	    var style = {
+	        position     : 'absolute',
+	        visibility   : 'hidden',
+	        overflow     : 'hidden',
+	        pointerEvents: 'none',
+	        left         : left,
+	        top          : top,
+	        zIndex       : 1
+	    }
+
+	    if (!this.aligning && !sameMenu){
+	        setTimeout(function(){
+
+	            if (!this.isMounted()){
+	                return
+	            }
+
+	            var thisRegion = Region.from(this.getDOMNode())
+	            var menuItemRegion = Region.from({
+	                left  : thisRegion.left,
+	                top   : thisRegion.top + offset.top,
+	                width : offset.width,
+	                height: offset.height
+	            })
+
+	            var subMenuMounted = this.refs.subMenu && this.refs.subMenu.isMounted()
+	            if (!subMenuMounted){
+	                return
+	            }
+
+	            var subMenuRegion = Region.from(this.refs.subMenu.refs.scrollContainer.getCurrentSizeDOM())
+
+	            var initialHeight = subMenuRegion.height
+
+	            var alignPos = align(props, subMenuRegion, /* alignTo */ menuItemRegion, props.constrainTo)
+
+	            var newHeight = subMenuRegion.height
+	            var maxHeight
+
+	            if (newHeight < initialHeight){
+	                maxHeight = newHeight - props.subMenuConstrainMargin
+	            }
+
+	            if (maxHeight && alignPos == -1 /* upwards*/){
+	                subMenuRegion.top = subMenuRegion.bottom - maxHeight
+	            }
+
+	            var newLeft = subMenuRegion.left - thisRegion.left
+	            var newTop  = subMenuRegion.top  - thisRegion.top
+
+	            if (Math.abs(newLeft - left) < 5){
+	                newLeft = left
+	            }
+
+	            if (Math.abs(newTop - top) < 5){
+	                newTop = top
+	            }
+
+	            this.subMenuPosition = newLeft < 0? 'left': 'right'
+
+	            this.alignOffset = {
+	                left: newLeft,
+	                top : newTop
+	            }
+	            this.aligning = true
+
+	            this.setState({
+	                subMenuMaxHeight: maxHeight
+	            })
+
+	        }.bind(this), 0)
+	    }
+
+	    if (sameMenu || (this.aligning && this.alignOffset)){
+	        assign(style, this.alignOffset)
+	        style.visibility = 'visible'
+	        delete style.pointerEvents
+	        delete style.overflow
+	    }
+
+	    this.aligning = false
+
+	    return style
+	}
+
+/***/ },
+/* 50 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/** @jsx React.DOM */'use strict';
+
+	var React         = __webpack_require__(1)
+	var assign        = __webpack_require__(40)
+	var getArrowStyle = __webpack_require__(42)
+
+	function emptyFn(){}
+
+	var SCROLLER_STYLE = {
+	    left      : 0,
+	    right     : 0,
+	    position  : 'absolute',
+	    cursor    : 'pointer',
+	    zIndex    : 1
+	}
+
+	function generateArrowStyle(props, state, overrideStyle){
+	    var style = assign({}, overrideStyle)
+
+	    var arrowConfig = {
+	        color: style.color || props.arrowColor
+	    }
+
+	    var offset = 4
+	    var width  = style.width  || props.arrowWidth  || props.arrowSize || (props.style.height - offset)
+	    var height = style.height || props.arrowHeight || props.arrowSize || (props.style.height - offset)
+
+	    arrowConfig.width  = width
+	    arrowConfig.height = height
+
+	    assign(style, getArrowStyle(props.side == 'top'? 'up':'down', arrowConfig))
+
+	    style.display = 'inline-block'
+	    style.position = 'absolute'
+
+	    style.left = '50%'
+	    style.marginLeft = -width
+
+	    style.top = '50%'
+	    style.marginTop = -height/2
+
+	    if (state.active){
+	        style.marginTop += props.side == 'top'? -1: 1
+	    }
+
+	    return style
+	}
+
+	var Scroller = React.createClass({displayName: 'Scroller',
+
+	    display: 'ReactMenuScroller',
+
+	    getInitialState: function() {
+	        return {}
+	    },
+
+	    getDefaultProps: function(){
+	        return {
+	            height: 10,
+	            defaultStyle: {
+	                background : 'white'
+	            },
+	            defaultOverStyle: {},
+	            overStyle: {},
+
+	            defaultTopStyle: {
+	                borderBottom: '1px solid gray'
+	            },
+	            topStyle: {},
+	            defaultBottomStyle: {
+	                borderTop: '1px solid gray'
+	            },
+	            bottomStyle: {},
+
+	            arrowColor: 'gray',
+
+	            arrowStyle: {},
+	            defaultArrowStyle: {},
+	            defaultArrowOverStyle: {
+	                color: 'rgb(74, 74, 74)'
+	            },
+	            arrowOverStyle: {}
+	        }
+	    },
+
+	    handleMouseEnter: function() {
+	        this.setState({
+	            mouseOver: true
+	        })
+	    },
+
+	    handleMouseLeave: function() {
+	        this.setState({
+	            mouseOver: false
+	        })
+	    },
+
+	    handleMouseDown: function(event) {
+	        this.setState({
+	            active: true
+	        })
+
+	        ;(this.props.onMouseDown || emptyFn)(event)
+	    },
+
+	    handleMouseUp: function(event) {
+	        this.setState({
+	            active: false
+	        })
+
+	        ;(this.props.onMouseUp || emptyFn)(event)
+	    },
+
+	    render: function(){
+	        var props = assign({}, this.props, {
+	            onMouseEnter: this.handleMouseEnter,
+	            onMouseLeave: this.handleMouseLeave,
+
+	            onMouseDown: this.handleMouseDown,
+	            onMouseUp  : this.handleMouseUp
+	        })
+
+	        var state = this.state
+	        var side  = props.side
+
+	        props.className = this.prepareClassName(props, state)
+
+	        props.style = this.prepareStyle(props, state)
+
+	        var arrowStyle = this.prepareArrowStyle(props, state)
+
+	        return props.factory?
+	                    props.factory(props, side):
+	                    React.createElement("div", React.__spread({},  props), 
+	                        React.createElement("div", {style: arrowStyle})
+	                    )
+	    },
+
+	    prepareStyle: function(props, state) {
+	        var defaultOverStyle
+	        var overStyle
+
+	        if (state.mouseOver){
+	            overStyle        = props.overStyle
+	            defaultOverStyle = props.defaultOverStyle
+	        }
+
+	        var defaultSideStyle = props.side == 'top'?
+	                                props.defaultTopStyle:
+	                                props.defaultBottomStyle
+	        var sideStyle = props.side == 'top'?
+	                            props.topStyle:
+	                            props.bottomStyle
+
+	        var style = assign({}, SCROLLER_STYLE,
+	                            props.defaultStyle, defaultSideStyle, defaultOverStyle,
+	                            props.style, sideStyle, overStyle)
+
+	        style.height = style.height || props.height
+	        style[props.side] = 0
+	        if (!props.visible){
+	            style.display = 'none'
+	        }
+
+	        return style
+	    },
+
+	    prepareClassName: function(props, state) {
+	        //className
+	        var className = props.className || ''
+	        className += ' z-menu-scroller ' + props.side
+
+	        if (props.active && props.visible){
+	            className += ' active'
+	        }
+
+	        return className
+	    },
+
+	    prepareArrowStyle: function(props, state) {
+
+	        var defaultArrowOverStyle
+	        var arrowOverStyle
+
+	        if (state.mouseOver){
+	            defaultArrowOverStyle = props.defaultArrowOverStyle
+	            arrowOverStyle        = props.arrowOverStyle
+	        }
+
+	        var arrowStyle = assign({}, props.defaultArrowStyle, defaultArrowOverStyle, props.arrowStyle, arrowOverStyle)
+
+	        return generateArrowStyle(props, state, arrowStyle)
+	    },
+
+	    handleClick: function(event){
+	        event.stopPropagation
+	    }
+	})
+
+	module.exports = Scroller
+
+/***/ },
+/* 51 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var curry   = __webpack_require__(61)
+	var matches = __webpack_require__(62)
+
+	module.exports = curry(function(selector, node){
+	    while (node = node.parentElement){
+	        if (matches.call(node, selector)){
+	            return node
+	        }
+	    }
+	})
+
+/***/ },
+/* 52 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var React    = __webpack_require__(1)
+	  , hasOwn   = Object.prototype.hasOwnProperty
+	  , version  = React.version.split('.').map(parseFloat)
+	  , RESERVED = {
+	      className:  resolve(joinClasses),
+	      children:   function(){},
+	      key:        function(){},
+	      ref:        function(){},
+	      style:      resolve(extend)
+	    };
+
+	module.exports = function cloneWithProps(child, props) {
+	  var newProps = mergeProps(props, child.props);
+
+	  if (!hasOwn.call(newProps, 'children') && hasOwn.call(child.props, 'children'))
+	    newProps.children = child.props.children;
+
+	  // < 0.11
+	  if (version[0] === 0 && version[1] < 11)
+	    return child.constructor.ConvenienceConstructor(newProps);
+	  
+	  // 0.11
+	  if (version[0] === 0 && version[1] === 11)
+	    return child.constructor(newProps);
+
+	  // 0.12
+	  else if (version[0] === 0 && version[1] === 12){
+	    MockLegacyFactory.isReactLegacyFactory = true
+	    MockLegacyFactory.type = child.type
+	    return React.createElement(MockLegacyFactory, newProps);
+	  }
+
+	  // 0.13+
+	  return React.createElement(child.type, newProps);
+
+	  function MockLegacyFactory(){}
+	}
+
+	function mergeProps(currentProps, childProps) {
+	  var newProps = extend(currentProps), key
+
+	  for (key in childProps) {
+	    if (hasOwn.call(RESERVED, key) )
+	      RESERVED[key](newProps, childProps[key], key)
+
+	    else if ( !hasOwn.call(newProps, key) )
+	      newProps[key] = childProps[key];
+	  }
+	  return newProps
+	}
+
+	function resolve(fn){
+	  return function(src, value, key){
+	    if( !hasOwn.call(src, key)) src[key] = value
+	    else src[key] = fn(src[key], value)
+	  }
+	}
+
+	function joinClasses(a, b){
+	  if ( !a ) return b || ''
+	  return a + (b ? ' ' + b : '')
+	}
+
+	function extend() {
+	  var target = {};
+	  for (var i = 0; i < arguments.length; i++) 
+	    for (var key in arguments[i]) if (hasOwn.call(arguments[i], key)) 
+	      target[key] = arguments[i][key]   
+	  return target
+	}
+
+/***/ },
+/* 53 */
+/***/ function(module, exports, __webpack_require__) {
+
+	    var setImmediate = function(fn){
+	        setTimeout(fn, 0)
+	    }
+	    var clearImmediate = clearTimeout
+	    /**
+	     * Utility methods for working with functions.
+	     * These methods augment the Function prototype.
+	     *
+	     * Using {@link #before}
+	     *
+	     *      function log(m){
+	     *          console.log(m)
+	     *      }
+	     *
+	     *      var doLog = function (m){
+	     *          console.log('LOG ')
+	     *      }.before(log)
+	     *
+	     *      doLog('test')
+	     *      //will log
+	     *      //"LOG "
+	     *      //and then
+	     *      //"test"
+	     *
+	     *
+	     *
+	     * Using {@link #bindArgs}:
+	     *
+	     *      //returns the sum of all arguments
+	     *      function add(){
+	     *          var sum = 0
+	     *          [].from(arguments).forEach(function(n){
+	     *              sum += n
+	     *          })
+	     *
+	     *          return sum
+	     *      }
+	     *
+	     *      var add1 = add.bindArgs(1)
+	     *
+	     *      add1(2, 3) == 6
+	     *
+	     * Using {@link #lockArgs}:
+	     *
+	     *      function add(){
+	     *          var sum = 0
+	     *          [].from(arguments).forEach(function(n){
+	     *              sum += n
+	     *          })
+	     *
+	     *          return sum
+	     *      }
+	     *
+	     *      var add1_2   = add.lockArgs(1,2)
+	     *      var add1_2_3 = add.lockArgs(1,2,3)
+	     *
+	     *      add1_2(3,4)  == 3 //args are locked to only be 1 and 2
+	     *      add1_2_3(6)  == 6 //args are locked to only be 1, 2 and 3
+	     *
+	     *
+	     *
+	     * Using {@link #compose}:
+	     *
+	     *      function multiply(a,b){
+	     *          return a* b
+	     *      }
+	     *
+	     *      var multiply2 = multiply.curry()(2)
+	     *
+	     *      Function.compose(multiply2( add(5,6) )) == multiply2( add(5,6) )
+	     *
+	     *
+	     * @class Function
+	     */
+
+	    var SLICE = Array.prototype.slice
+
+	    var curry = __webpack_require__(63),
+
+	        findFn = function(fn, target, onFound){
+	            // if (typeof target.find == 'function'){
+	            //     return target.find(fn)
+	            // }
+
+	            onFound = typeof onFound == 'function'?
+	                        onFound:
+	                        function(found, key, target){
+	                            return found
+	                        }
+
+	            if (Array.isArray(target)){
+	                var i   = 0
+	                var len = target.length
+	                var it
+
+	                for(; i < len; i++){
+	                    it = target[i]
+	                    if (fn(it, i, target)){
+	                        return onFound(it, i, target)
+	                    }
+	                }
+
+	                return
+	            }
+
+	            if (typeof target == 'object'){
+	                var keys = Object.keys(target)
+	                var i = 0
+	                var len = keys.length
+	                var k
+	                var it
+
+	                for( ; i < len; i++){
+	                    k  = keys[i]
+	                    it = target[k]
+
+	                    if (fn(it, k, target)){
+	                        return onFound(it, k, target)
+	                    }
+	                }
+	            }
+	        },
+
+	        find = curry(findFn, 2),
+
+	        findIndex = curry(function(fn, target){
+	            return findFn(fn, target, function(it, i){
+	                return i
+	            })
+	        }),
+
+	        bindFunctionsOf = function(obj) {
+	            Object.keys(obj).forEach(function(k){
+	                if (typeof obj[k] == 'function'){
+	                    obj[k] = obj[k].bind(obj)
+	                }
+	            })
+
+	            return obj
+	        },
+
+	        /*
+	         * @param {Function...} an enumeration of functions, each consuming the result of the following function.
+	         *
+	         * For example: compose(c, b, a)(1,4) == c(b(a(1,4)))
+	         *
+	         * @return the result of the first function in the enumeration
+	         */
+	        compose = __webpack_require__(64),
+
+	        chain = __webpack_require__(65),
+
+	        once = __webpack_require__(66),
+
+	        bindArgsArray = __webpack_require__(67),
+
+	        bindArgs = __webpack_require__(68),
+
+	        lockArgsArray = __webpack_require__(69),
+
+	        lockArgs = __webpack_require__(70),
+
+	        skipArgs = function(fn, count){
+	            return function(){
+	                var args = SLICE.call(arguments, count || 0)
+
+	                return fn.apply(this, args)
+	            }
+	        },
+
+	        intercept = function(interceptedFn, interceptingFn, withStopArg){
+
+	            return function(){
+	                var args    = [].from(arguments),
+	                    stopArg = { stop: false }
+
+	                if (withStopArg){
+	                    args.push(stopArg)
+	                }
+
+	                var result = interceptingFn.apply(this, args)
+
+	                if (withStopArg){
+	                    if (stopArg.stop === true){
+	                        return result
+	                    }
+
+	                } else {
+	                    if (result === false){
+	                        return result
+	                    }
+	                }
+
+	                //the interception was not stopped
+	                return interceptedFn.apply(this, arguments)
+	            }
+
+	        },
+
+	        delay = function(fn, delay, scope){
+
+	            var delayIsNumber = delay * 1 == delay
+
+	            if (arguments.length == 2 && !delayIsNumber){
+	                scope = delay
+	                delay = 0
+	            } else {
+	                if (!delayIsNumber){
+	                    delay = 0
+	                }
+	            }
+
+	            return function(){
+	                var self = scope || this,
+	                    args = arguments
+
+	                if (delay < 0){
+	                    fn.apply(self, args)
+	                    return
+	                }
+
+	                if (delay || !setImmediate){
+	                    setTimeout(function(){
+	                        fn.apply(self, args)
+	                    }, delay)
+
+	                } else {
+	                    setImmediate(function(){
+	                        fn.apply(self, args)
+	                    })
+	                }
+	            }
+	        },
+
+	        defer = function(fn, scope){
+	            return delay(fn, 0, scope)
+	        },
+
+	        buffer = function(fn, delay, scope){
+
+	            var timeoutId = -1
+
+	            return function(){
+
+	                var self = scope || this,
+	                    args = arguments
+
+	                if (delay < 0){
+	                    fn.apply(self, args)
+	                    return
+	                }
+
+	                var withTimeout = delay || !setImmediate,
+	                    clearFn = withTimeout?
+	                                clearTimeout:
+	                                clearImmediate,
+	                    setFn   = withTimeout?
+	                                setTimeout:
+	                                setImmediate
+
+	                if (timeoutId !== -1){
+	                    clearFn(timeoutId)
+	                }
+
+	                timeoutId = setFn(function(){
+	                    fn.apply(self, args)
+	                    self = null
+	                }, delay)
+
+	            }
+
+	        },
+
+	        throttle = function(fn, delay, scope) {
+	            var timeoutId = -1,
+	                self,
+	                args
+
+	            return function () {
+
+	                self = scope || this
+	                args = arguments
+
+	                if (timeoutId !== -1) {
+	                    //the function was called once again in the delay interval
+	                } else {
+	                    timeoutId = setTimeout(function () {
+	                        fn.apply(self, args)
+
+	                        self = null
+	                        timeoutId = -1
+	                    }, delay)
+	                }
+
+	            }
+
+	        },
+
+	        spread = function(fn, delay, scope){
+
+	            var timeoutId       = -1
+	            var callCount       = 0
+	            var executeCount    = 0
+	            var nextArgs        = {}
+	            var increaseCounter = true
+	            var resultingFnUnbound
+	            var resultingFn
+
+	            resultingFn = resultingFnUnbound = function(){
+
+	                var args = arguments,
+	                    self = scope || this
+
+	                if (increaseCounter){
+	                    nextArgs[callCount++] = {args: args, scope: self}
+	                }
+
+	                if (timeoutId !== -1){
+	                    //the function was called once again in the delay interval
+	                } else {
+	                    timeoutId = setTimeout(function(){
+	                        fn.apply(self, args)
+
+	                        timeoutId = -1
+	                        executeCount++
+
+	                        if (callCount !== executeCount){
+	                            resultingFn = bindArgsArray(resultingFnUnbound, nextArgs[executeCount].args).bind(nextArgs[executeCount].scope)
+	                            delete nextArgs[executeCount]
+
+	                            increaseCounter = false
+	                            resultingFn.apply(self)
+	                            increaseCounter = true
+	                        } else {
+	                            nextArgs = {}
+	                        }
+	                    }, delay)
+	                }
+
+	            }
+
+	            return resultingFn
+	        },
+
+	        /*
+	         * @param {Array} args the array for which to create a cache key
+	         * @param {Number} [cacheParamNumber] the number of args to use for the cache key. Use this to limit the args that area actually used for the cache key
+	         */
+	        getCacheKey = function(args, cacheParamNumber){
+	            if (cacheParamNumber == null){
+	                cacheParamNumber = -1
+	            }
+
+	            var i        = 0,
+	                len      = Math.min(args.length, cacheParamNumber),
+	                cacheKey = [],
+	                it
+
+	            for ( ; i < len; i++){
+	                it = args[i]
+
+	                if (root.check.isPlainObject(it) || Array.isArray(it)){
+	                    cacheKey.push(JSON.stringify(it))
+	                } else {
+	                    cacheKey.push(String(it))
+	                }
+	            }
+
+	            return cacheKey.join(', ')
+	        },
+
+	        /*
+	         * @param {Function} fn - the function to cache results for
+	         * @param {Number} skipCacheParamNumber - the index of the boolean parameter that makes this function skip the caching and
+	         * actually return computed results.
+	         * @param {Function|String} cacheBucketMethod - a function or the name of a method on this object which makes caching distributed across multiple buckets.
+	         * If given, cached results will be searched into the cache corresponding to this bucket. If no result found, return computed result.
+	         *
+	         * For example this param is very useful when a function from a prototype is cached,
+	         * but we want to return the same cached results only for one object that inherits that proto, not for all objects. Thus, for example for Wes.Element,
+	         * we use the 'getId' cacheBucketMethod to indicate cached results for one object only.
+	         * @param {Function} [cacheKeyBuilder] A function to be used to compose the cache key
+	         *
+	         * @return {Function} a new function, which returns results from cache, if they are available, otherwise uses the given fn to compute the results.
+	         * This returned function has a 'clearCache' function attached, which clears the caching. If a parameter ( a bucket id) is  provided,
+	         * only clears the cache in the specified cache bucket.
+	         */
+	        cache = function(fn, config){
+	            config = config || {}
+
+	            var bucketCache = {},
+	                cache       = {},
+	                skipCacheParamNumber = config.skipCacheIndex,
+	                cacheBucketMethod    = config.cacheBucket,
+	                cacheKeyBuilder      = config.cacheKey,
+	                cacheArgsLength      = skipCacheParamNumber == null?
+	                                            fn.length:
+	                                            skipCacheParamNumber,
+	                cachingFn
+
+	            cachingFn = function(){
+	                var result,
+	                    skipCache = skipCacheParamNumber != null?
+	                                                arguments[skipCacheParamNumber] === true:
+	                                                false,
+	                    args = skipCache?
+	                                    SLICE.call(arguments, 0, cacheArgsLength):
+	                                    SLICE.call(arguments),
+
+	                    cacheBucketId = cacheBucketMethod != null?
+	                                        typeof cacheBucketMethod == 'function'?
+	                                            cacheBucketMethod():
+	                                            typeof this[cacheBucketMethod] == 'function'?
+	                                                this[cacheBucketMethod]():
+	                                                null
+	                                        :
+	                                        null,
+
+
+	                    cacheObject = cacheBucketId?
+	                                        bucketCache[cacheBucketId]:
+	                                        cache,
+
+	                    cacheKey = (cacheKeyBuilder || getCacheKey)(args, cacheArgsLength)
+
+	                if (cacheBucketId && !cacheObject){
+	                    cacheObject = bucketCache[cacheBucketId] = {}
+	                }
+
+	                if (skipCache || cacheObject[cacheKey] == null){
+	                    cacheObject[cacheKey] = result = fn.apply(this, args)
+	                } else {
+	                    result = cacheObject[cacheKey]
+	                }
+
+	                return result
+	            }
+
+	            /*
+	             * @param {String|Object|Number} [bucketId] the bucket for which to clear the cache. If none given, clears all the cache for this function.
+	             */
+	            cachingFn.clearCache = function(bucketId){
+	                if (bucketId){
+	                    delete bucketCache[String(bucketId)]
+	                } else {
+	                    cache = {}
+	                    bucketCache = {}
+	                }
+	            }
+
+	            /*
+	             *
+	             * @param {Array} cacheArgs The array of objects from which to create the cache key
+	             * @param {Number} [cacheParamNumber] A limit for the cache args that are actually used to compute the cache key.
+	             * @param {Function} [cacheKeyBuilder] The function to be used to compute the cache key from the given cacheArgs and cacheParamNumber
+	             */
+	            cachingFn.getCache = function(cacheArgs, cacheParamNumber, cacheKeyBuilder){
+	                return cachingFn.getBucketCache(null, cacheArgs, cacheParamNumber, cacheKeyBuilder)
+	            }
+
+	            /*
+	             *
+	             * @param {String} bucketId The id of the cache bucket from which to retrieve the cached value
+	             * @param {Array} cacheArgs The array of objects from which to create the cache key
+	             * @param {Number} [cacheParamNumber] A limit for the cache args that are actually used to compute the cache key.
+	             * @param {Function} [cacheKeyBuilder] The function to be used to compute the cache key from the given cacheArgs and cacheParamNumber
+	             */
+	            cachingFn.getBucketCache = function(bucketId, cacheArgs, cacheParamNumber, cacheKeyBuilder){
+	                var cacheObject = cache,
+	                    cacheKey = (cacheKeyBuilder || getCacheKey)(cacheArgs, cacheParamNumber)
+
+	                if (bucketId){
+	                    bucketId = String(bucketId);
+
+	                    cacheObject = bucketCache[bucketId] = bucketCache[bucketId] || {}
+	                }
+
+	                return cacheObject[cacheKey]
+	            }
+
+	            /*
+	             *
+	             * @param {Object} value The value to set in the cache
+	             * @param {Array} cacheArgs The array of objects from which to create the cache key
+	             * @param {Number} [cacheParamNumber] A limit for the cache args that are actually used to compute the cache key.
+	             * @param {Function} [cacheKeyBuilder] The function to be used to compute the cache key from the given cacheArgs and cacheParamNumber
+	             */
+	            cachingFn.setCache = function(value, cacheArgs, cacheParamNumber, cacheKeyBuilder){
+	                return cachingFn.setBucketCache(null, value, cacheArgs, cacheParamNumber, cacheKeyBuilder)
+	            }
+
+	            /*
+	             *
+	             * @param {String} bucketId The id of the cache bucket for which to set the cache value
+	             * @param {Object} value The value to set in the cache
+	             * @param {Array} cacheArgs The array of objects from which to create the cache key
+	             * @param {Number} [cacheParamNumber] A limit for the cache args that are actually used to compute the cache key.
+	             * @param {Function} [cacheKeyBuilder] The function to be used to compute the cache key from the given cacheArgs and cacheParamNumber
+	             */
+	            cachingFn.setBucketCache = function(bucketId, value, cacheArgs, cacheParamNumber, cacheKeyBuilder){
+
+	                var cacheObject = cache,
+	                    cacheKey = (cacheKeyBuilder || getCacheKey)(cacheArgs, cacheParamNumber)
+
+	                if (bucketId){
+	                    bucketId = String(bucketId)
+
+	                    cacheObject = bucketCache[bucketId] = bucketCache[bucketId] || {};
+	                }
+
+	                return cacheObject[cacheKey] = value
+	            }
+
+	            return cachingFn
+	        }
+
+	module.exports = {
+
+	    map: __webpack_require__(71),
+
+	    dot: __webpack_require__(72),
+
+	    maxArgs: __webpack_require__(73),
+
+	    /**
+	     * @method compose
+	     *
+	     * Example:
+	     *
+	     *      zippy.Function.compose(c, b, a)
+	     *
+	     * See {@link Function#compose}
+	     */
+	    compose: compose,
+
+	    /**
+	     * See {@link Function#self}
+	     */
+	    self: function(fn){
+	        return fn
+	    },
+
+	    /**
+	     * See {@link Function#buffer}
+	     */
+	    buffer: buffer,
+
+	    /**
+	     * See {@link Function#delay}
+	     */
+	    delay: delay,
+
+	    /**
+	     * See {@link Function#defer}
+	     * @param {Function} fn
+	     * @param {Object} scope
+	     */
+	    defer:defer,
+
+	    /**
+	     * See {@link Function#skipArgs}
+	     * @param {Function} fn
+	     * @param {Number} [count=0] how many args to skip when calling the resulting function
+	     * @return {Function} The function that will call the original fn without the first count args.
+	     */
+	    skipArgs: skipArgs,
+
+	    /**
+	     * See {@link Function#intercept}
+	     */
+	    intercept: function(fn, interceptedFn, withStopArgs){
+	        return intercept(interceptedFn, fn, withStopArgs)
+	    },
+
+	    /**
+	     * See {@link Function#throttle}
+	     */
+	    throttle: throttle,
+
+	    /**
+	     * See {@link Function#spread}
+	     */
+	    spread: spread,
+
+	    /**
+	     * See {@link Function#chain}
+	     */
+	    chain: function(fn, where, mainFn){
+	        return chain(where, mainFn, fn)
+	    },
+
+	    /**
+	     * See {@link Function#before}
+	     */
+	    before: function(fn, otherFn){
+	        return chain('before', otherFn, fn)
+	    },
+
+	    /**
+	     * See {@link Function#after}
+	     */
+	    after: function(fn, otherFn){
+	        return chain('after', otherFn, fn)
+	    },
+
+	    /**
+	     * See {@link Function#curry}
+	     */
+	    curry: curry,
+
+	    /**
+	     * See {@link Function#once}
+	     */
+	    once: once,
+
+	    /**
+	     * See {@link Function#bindArgs}
+	     */
+	    bindArgs: bindArgs,
+
+	    /**
+	     * See {@link Function#bindArgsArray}
+	     */
+	    bindArgsArray: bindArgsArray,
+
+	    /**
+	     * See {@link Function#lockArgs}
+	     */
+	    lockArgs: lockArgs,
+
+	    /**
+	     * See {@link Function#lockArgsArray}
+	     */
+	    lockArgsArray: lockArgsArray,
+
+	    bindFunctionsOf: bindFunctionsOf,
+
+	    find: find,
+
+	    findIndex: findIndex,
+
+	    newify: __webpack_require__(74)
+	}
+
+/***/ },
+/* 54 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var hasOwn    = __webpack_require__(81)
+	var newify    = __webpack_require__(82)
+
+	var assign      = __webpack_require__(40);
+	var EventEmitter = __webpack_require__(83).EventEmitter
+
+	var inherits = __webpack_require__(78)
+	var VALIDATE = __webpack_require__(79)
 
 	var objectToString = Object.prototype.toString
 
@@ -2313,853 +6781,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	})
 
-	__webpack_require__(22)(REGION)
+	__webpack_require__(80)(REGION)
 
 	module.exports = REGION
 
 /***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	function emptyFn(){}
-
-	var React      = __webpack_require__(1)
-	var assign     = __webpack_require__(2)
-	var Region     = __webpack_require__(6)
-	var inTriangle = __webpack_require__(38)
-
-	var getConstrainRegion = __webpack_require__(24)
-	var getItemStyleProps = __webpack_require__(25)
-	var renderSubMenu     = __webpack_require__(26)
-	var renderChildren    = __webpack_require__(27)
-	var prepareItem       = __webpack_require__(28)
-
-	var propTypes = __webpack_require__(29)
-	var ScrollContainer = __webpack_require__(30)
-
-	var MenuClass = React.createClass({
-
-	    displayName: 'Menu',
-
-	    propTypes: propTypes,
-
-	    getDefaultProps: function(){
-
-	        return {
-	            isMenu: true,
-	            enableScroll: true,
-	            constrainTo: true,
-	            defaultStyle: {
-	                border  : '1px solid gray',
-	                display : 'inline-block',
-	                position: 'relative'
-	            },
-	            defaultSubMenuStyle: {
-	                position: 'absolute'
-	            },
-	            scrollerProps: {
-	            },
-	            columns: ['label'],
-	            items: null,
-	            visible: true,
-	            subMenuConstrainMargin: 10,
-
-	            defaultItemStyle: {},
-	            itemStyle: {},
-	            defaultItemOverStyle: {},
-	            itemOverStyle: {},
-	            defaultItemDisabledStyle: {},
-	            itemDisabledStyle: {},
-	            defaultItemExpandedStyle: {},
-	            itemExpandedStyle: {},
-
-	            defaultCellStyle: {},
-	            cellStyle: {}
-	        }
-	    },
-
-	    getInitialState: function() {
-	        return {
-	            mouseOver: false
-	        }
-	    },
-
-	    componentDidMount: function() {
-	        ;(this.props.onMount || emptyFn)(this)
-
-	        if (this.props.constrainTo && !this.props.subMenu){
-	            setTimeout(function(){
-	                var scrollRegion = Region.from(this.refs.scrollContainer.getDOMNode())
-	                var domRegion = Region.from(this.getDOMNode())
-	                var paddingSize = domRegion.height
-
-	                var actualHeight = scrollRegion.height + paddingSize
-	                //get clientHeight of this dom node, so as to account for padding
-
-	                var actualRegion = Region({
-	                    top: domRegion.top,
-	                    bottom: domRegion.top + actualHeight
-	                })
-
-	                var constrainRegion = getConstrainRegion(this.props.constrainTo)
-	                var newState = {}
-
-	                if (actualRegion.bottom > constrainRegion.bottom){
-	                    newState = {
-	                        maxHeight: constrainRegion.bottom - actualRegion.top - paddingSize
-	                    }
-	                }
-
-	                this.setState(newState)
-	            }.bind(this), 0)
-	        }
-	    },
-
-	    prepareProps: function(thisProps, state) {
-	        var props = {}
-
-	        assign(props, this.props)
-
-	        props.style     = this.prepareStyle(props, state)
-	        props.className = this.prepareClassName(props)
-
-	        props.itemStyleProps = getItemStyleProps(props, state)
-	        props.children  = this.prepareChildren(props, state)
-
-	        props.scrollerProps = this.prepareScrollerProps(props)
-
-	        return props
-	    },
-
-	    prepareScrollerProps: function(props) {
-	        return assign({}, props.scrollerProps)
-	    },
-
-	    prepareChildren: function(props, state){
-
-	        var children = props.children
-
-	        if (props.items){
-	            children = props.items.map(this.prepareItem.bind(this, props, state))
-	        }
-
-	        return children
-	    },
-
-	    prepareItem: prepareItem,
-
-	    prepareClassName: function(props) {
-	        var className = props.className || ''
-
-	        className += ' z-menu'
-
-	        return className
-	    },
-
-	    prepareStyle: function(props, state) {
-	        var subMenuStyle = props.subMenu?
-	                            props.defaultSubMenuStyle:
-	                            null
-
-	        var style = assign({}, props.defaultStyle, subMenuStyle, props.style)
-
-	        if (!props.visible){
-	            style.display = 'none'
-	        }
-
-	        if (props.absolute){
-	            style.position = 'absolute'
-	        }
-
-	        if (props.at){
-	            var isArray = Array.isArray(props.at)
-	            var coords = {
-	                left: isArray?
-	                        props.at[0]:
-	                        props.at.left === undefined?
-	                            props.at.x || props.at.pageX:
-	                            props.at.left,
-
-	                top: isArray?
-	                        props.at[1]:
-	                        props.at.top === undefined?
-	                            props.at.y || props.at.pageY:
-	                            props.at.top
-	            }
-
-	            assign(style, coords)
-	        }
-
-	        if (state.style){
-	            assign(style, state.style)
-	        }
-
-	        if (!this.isMounted() && props.constrainTo && !props.subMenu){
-	            style.visibility = 'hidden'
-	            style.maxHeight = 0
-	            style.overflow = 'hidden'
-	        }
-
-	        return style
-	    },
-
-	    /////////////// RENDERING LOGIC
-
-	    renderSubMenu: renderSubMenu,
-
-	    render: function() {
-	        var state = this.state
-	        var props = this.prepareProps(this.props, state)
-
-	        var menu     = this.renderSubMenu(props, state)
-	        var children = this.renderChildren(props, state)
-
-	        return (
-	            React.createElement("div", React.__spread({},  props), 
-	                menu, 
-	                React.createElement(ScrollContainer, {
-	                    onMouseEnter: this.handleMouseEnter, 
-	                    onMouseLeave: this.handleMouseLeave, 
-	                    scrollerProps: props.scrollerProps, 
-	                    ref: "scrollContainer", enableScroll: props.enableScroll, maxHeight: state.maxHeight || props.maxHeight}, 
-	                    React.createElement("table", {ref: "table"}, 
-	                        React.createElement("tbody", null, 
-	                            children
-	                        )
-	                    )
-	                )
-	            )
-	        )
-	    },
-
-	    renderChildren: renderChildren,
-
-	    ////////////////////////// BEHAVIOUR LOGIC
-
-	    handleMouseEnter: function() {
-	        this.setState({
-	            mouseInside: true
-	        })
-
-	        this.onActivate()
-	    },
-
-	    handleMouseLeave: function() {
-	        this.setState({
-	            mouseInside: false
-	        })
-
-	        if (!this.state.menu && !this.state.nextItem){
-	        // if (!this.state.nextItem){
-	            this.onInactivate()
-	        }
-	    },
-
-	    onActivate: function() {
-	        if (!this.state.activated){
-	            // console.log('activate')
-	            this.setState({
-	                activated: true
-	            })
-
-	            ;(this.props.onActivate || emptyFn)()
-	        }
-	    },
-
-	    onInactivate: function() {
-	        if (this.state.activated){
-
-	            this.setState({
-	                activated: false
-	            })
-
-	            // console.log('inactivate')
-	            ;(this.props.onInactivate || emptyFn)()
-	        }
-	    },
-
-	    //we also need mouseOverSubMenu: Boolean
-	    //since when from a submenu we move back to a parent menu, we may move
-	    //to a different menu item than the one that triggered the submenu
-	    //so we should display another submenu
-	    handleSubMenuMouseEnter: function() {
-	        this.setState({
-	            mouseOverSubMenu: true
-	        })
-	    },
-
-	    handleSubMenuMouseLeave: function() {
-	        this.setState({
-	            mouseOverSubMenu: false
-	        })
-	    },
-
-	    isSubMenuActive: function() {
-	        return this.state.subMenuActive
-	    },
-
-	    onSubMenuActivate: function() {
-	        this.setState({
-	            subMenuActive: true
-	        })
-	    },
-
-	    onSubMenuInactivate: function() {
-	        var ts = +new Date()
-
-	        var nextItem      = this.state.nextItem
-	        var nextTimestamp = this.state.nextTimestamp || 0
-
-	        this.setState({
-	            subMenuActive: false,
-	            timestamp       : ts
-	        }, function(){
-
-	            setTimeout(function(){
-	                if (ts != this.state.timestamp || (nextItem && (ts - nextTimestamp < 100))){
-	                    //a menu show has occured in the mean-time,
-	                    //so skip hiding the menu
-	                    this.setItem(this.state.nextItem, this.state.nextOffset)
-	                    return
-	                }
-
-	                if (!this.isSubMenuActive()){
-	                    this.setItem()
-	                }
-	            }.bind(this), 10)
-
-	        })
-
-	    },
-
-	    removeMouseMoveListener: function() {
-	        if (this.onWindowMouseMove){
-	            window.removeEventListener('mousemove', this.onWindowMouseMove)
-	            this.onWindowMouseMove = null
-	        }
-	    },
-
-	    onMenuItemMouseOut: function(itemProps, leaveOffset) {
-	        if (this.state.menu){
-	            this.setupCheck(leaveOffset)
-	        }
-	    },
-
-	    /**
-	     * Called when mouseout happens on the item for which there is a submenu displayed
-	     */
-	    onMenuItemMouseOver: function(itemProps, menuOffset, entryPoint) {
-
-	        if (!this.isMounted()){
-	            return
-	        }
-
-	        var menu = itemProps.menu
-	        var ts   = +new Date()
-
-	        if (!menu){
-	            return
-	        }
-
-	        if (!this.state.menu){
-	            //there is no menu visible, so it's safe to show the menu
-	            this.setItem(itemProps, menuOffset)
-	        } else {
-	            //there is a menu visible, from the previous item that had mouse over
-	            //so we should queue this item's menu as the next menu to be shown
-	            this.setNextItem(itemProps, menuOffset)
-	        }
-	    },
-
-	    setupCheck: function(offset){
-	        if (!this.isMounted()){
-	            return
-	        }
-
-	        var tolerance = 5
-
-	        var domNode    = this.getDOMNode()
-	        var menuNode   = domNode.querySelector('.z-menu')
-
-	        if (!menuNode){
-	            return
-	        }
-
-	        var menuRegion = Region.from(menuNode)
-
-	        var x1 = menuRegion.left
-	        var y1 = menuRegion.top// - tolerance
-
-	        var x2 = menuRegion.left
-	        var y2 = menuRegion.bottom// + tolerance
-
-	        if (this.subMenuPosition == 'left'){
-	            x1 = menuRegion.right
-	            x2 = menuRegion.right
-	        }
-
-	        var x3 = offset.x + (this.subMenuPosition == 'left'? tolerance: -tolerance)
-	        var y3 = offset.y
-
-	        var triangle = [
-	            [x1, y1],
-	            [x2, y2],
-	            [x3, y3]
-	        ]
-
-	        this.removeMouseMoveListener()
-
-	        this.onWindowMouseMove = function(event){
-
-	            var point = [event.pageX, event.pageY]
-
-	            if (!inTriangle(point, triangle)){
-
-	                this.removeMouseMoveListener()
-
-	                if (!this.state.mouseOverSubMenu){
-	                    //the mouse is not over a sub menu item
-	                    //
-	                    //so we show a menu of a sibling item, or hide the menu
-	                    //if no sibling item visited
-	                    this.setItem(this.state.nextItem, this.state.nextOffset)
-	                }
-	            }
-	        }.bind(this)
-
-	        window.addEventListener('mousemove', this.onWindowMouseMove)
-	    },
-
-	    setNextItem: function(itemProps, menuOffset) {
-
-	        var ts = +new Date()
-
-	        this.setState({
-	            timestamp        : ts,
-
-	            nextItem     : itemProps,
-	            nextOffset   : menuOffset,
-	            nextTimestamp: +new Date()
-	        })
-	    },
-
-	    setItem: function(itemProps, offset) {
-
-	        var menu = itemProps?
-	                        itemProps.menu:
-	                        null
-
-	        // if (!menu){
-	        //     return
-	        // }
-
-	        this.removeMouseMoveListener()
-
-	        if (!this.isMounted()){
-	            return
-	        }
-
-	        if (!menu && !this.state.mouseInside){
-	            this.onInactivate()
-	        }
-
-	        this.setState({
-	            itemProps    : itemProps,
-
-	            menu         : menu,
-	            menuOffset   : offset,
-	            timestamp    : +new Date(),
-
-	            nextItem     : null,
-	            nextOffset   : null,
-	            nextTimestamp: null
-	        })
-	    },
-
-	    onMenuItemClick: function(props, index, event) {
-	        var stopped = event.isPropagationStopped()
-
-	        event.stopPropagation()
-
-	        if (!stopped){
-	            ;(this.props.onClick || emptyFn)(props, index, event)
-	        }
-	    }
-	})
-
-	module.exports = MenuClass
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var React  = __webpack_require__(1)
-	var assign =__webpack_require__(2)
-	var arrowStyle =__webpack_require__(7)
-
-	function expanderStyle(){
-	    var style = arrowStyle('right', {
-	        width: 8,
-	        height: 4
-	    })
-
-	    style.display = 'inline-block'
-
-	    return style
-	}
-
-	var MenuItemCell = React.createClass({
-
-	    displayName: 'ReactMenuItemCell',
-
-	    getDefaultProps: function() {
-	        return {
-	            defaultStyle: {
-	                padding: 10,
-	                whiteSpace: 'nowrap'
-	            }
-	        }
-	    },
-
-	    render: function() {
-	        var props    = this.prepareProps(this.props)
-	        var children = props.children
-
-	        if (props.expander){
-	            children = props.expander === true? '›': props.expander
-	        }
-
-	        return (
-	            React.createElement("td", React.__spread({},  props), 
-	                children
-	            )
-	        )
-	    },
-
-	    prepareProps: function(thisProps) {
-	        var props = {}
-
-	        assign(props, thisProps)
-
-	        props.style = this.prepareStyle(props)
-	        // if (props.onMouseOver){
-	        //     debugger
-	        // }
-
-	        return props
-	    },
-
-	    prepareStyle: function(props) {
-	        var style = {}
-
-	        assign(style, props.defaultStyle, props.style)
-
-	        return style
-	    }
-	})
-
-	module.exports = MenuItemCell
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var React  = __webpack_require__(1)
-	var assign = __webpack_require__(2)
-
-	var emptyFn = function(){}
-
-	module.exports = React.createClass({
-
-	    displayName: 'ReactMenuSeparator',
-
-	    getDefaultProps: function() {
-	        return {
-	            defaultStyle: {
-	                cursor: 'auto'
-	            },
-	            border: '1px solid gray'
-	        }
-	    },
-
-	    render: function() {
-	        var props = this.prepareProps(this.props)
-
-	        return React.createElement("tr", React.__spread({},  props), React.createElement("td", {colSpan: 10}))
-	    },
-
-	    prepareProps: function(thisProps) {
-	        var props = {}
-
-	        assign(props, thisProps)
-
-	        props.style = this.prepareStyle(props)
-	        props.className = this.prepareClassName(props)
-
-	        return props
-	    },
-
-	    prepareClassName: function(props) {
-	        var className = props.className || ''
-
-	        className += ' menu-separator'
-
-	        return className
-	    },
-
-	    prepareStyle: function(props) {
-	        var style = {}
-
-	        assign(style, props.defaultStyle, {
-	            borderTop: props.border
-	        }, props.style)
-
-	        return style
-	    }
-	})
-
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var React  = __webpack_require__(1)
-	var assign = __webpack_require__(2)
-	var Region = __webpack_require__(6)
-	var selectParent = __webpack_require__(37)
-
-	var prepareChildren = __webpack_require__(23)
-	var Menu = __webpack_require__(12)
-	var MenuItemCell = __webpack_require__(13)
-
-	var emptyFn = function(){}
-
-	var MenuItem = React.createClass({
-
-	    displayName: 'ReactMenuItem',
-
-	    getInitialState: function() {
-	        return {}
-	    },
-
-	    getDefaultProps: function() {
-	        return {
-	            isMenuItem: true,
-	            defaultStyle: {
-	                cursor: 'pointer',
-	                background: 'white'
-	            },
-	            defaultOverStyle: {
-	                background: '#d7e7ff'
-	            },
-	            defaultActiveStyle: {
-	                background: 'rgb(187, 212, 251)'
-	            },
-	            defaultExpandedStyle: {
-	                background: 'rgb(230, 240, 255)'
-	            },
-	            defaultDisabledStyle: {
-	                color: 'gray',
-	                cursor: 'default'
-	            },
-	            expander: '›'
-	        }
-	    },
-
-	    render: function() {
-	        var props = this.prepareProps(this.props, this.state)
-
-	        return React.createElement("tr", React.__spread({},  props))
-	    },
-
-	    prepareProps: function(thisProps, state) {
-	        var props = {}
-
-	        assign(props, thisProps)
-
-	        props.mouseOver = !!state.mouseOver
-	        props.active    = !!state.active
-	        props.disabled    = !!props.disabled
-
-	        props.style     = this.prepareStyle(props)
-	        props.className = this.prepareClassName(props)
-
-	        props.children  = this.prepareChildren(props)
-
-	        props.onClick      = this.handleClick
-	        props.onMouseEnter = this.handleMouseEnter.bind(this, props)
-	        props.onMouseLeave = this.handleMouseLeave.bind(this, props)
-	        props.onMouseDown  = this.handleMouseDown
-	        props.onMouseMove  = this.handleMouseMove
-
-	        return props
-	    },
-
-	    handleClick: function(event) {
-
-	        var props = this.props
-
-	        if (props.disabled){
-	            event.stopPropagation()
-	            return
-	        }
-
-	        ;(props.onClick || props.fn || emptyFn)(props, props.index, event)
-	    },
-
-	    handleMouseMove: function(event){
-
-	    },
-
-	    handleMouseDown: function(event) {
-	        // event.preventDefault()
-
-	        var mouseUpListener = function(){
-	            this.setState({
-	                active: false
-	            })
-	            window.removeEventListener('mouseup', mouseUpListener)
-	        }.bind(this)
-
-	        window.addEventListener('mouseup', mouseUpListener)
-
-	        this.setState({
-	            active: true
-	        })
-	    },
-
-	    showMenu: function(menu, props) {
-
-	        props.showMenu(menu, offset)
-	    },
-
-	    handleMouseEnter: function(props, event) {
-
-	        if (props.disabled){
-	            return
-	        }
-
-	        var offset = {
-	            x: event.pageX,
-	            y: event.pageY
-	        }
-
-	        this.setState({
-	            mouseOver: true
-	        })
-
-	        if (props.onMenuItemMouseOver){
-
-	            var menuOffset
-
-	            if (props.menu){
-	                var menuRegion = Region.from(selectParent('.z-menu', this.getDOMNode()))
-	                var thisRegion = Region.from(this.getDOMNode())
-
-	                menuOffset = {
-	                    // pageX : thisRegion.left,
-	                    // pageY : thisRegion.top,
-
-	                    left  : thisRegion.left - menuRegion.left,
-	                    top   : thisRegion.top  - menuRegion.top,
-	                    width : thisRegion.width,
-	                    height: thisRegion.height
-	                }
-	            }
-
-	            props.onMenuItemMouseOver(props, menuOffset, offset)
-	        }
-	    },
-
-	    handleMouseLeave: function(props, event) {
-
-	        if (props.disabled){
-	            return
-	        }
-
-	        var offset = {
-	            x: event.pageX,
-	            y: event.pageY
-	        }
-
-	        if (this.isMounted()){
-	            this.setState({
-	                active: false,
-	                mouseOver: false
-	            })
-	        }
-
-	        if (props.onMenuItemMouseOut){
-	            props.onMenuItemMouseOut(props, offset)
-	        }
-	    },
-
-	    prepareChildren: prepareChildren,
-
-	    prepareClassName: function(props) {
-	        var className = props.className || ''
-
-	        className += ' menu-row'
-
-	        if (props.disabled){
-	            className += ' disabled ' + (props.disabledClassName || '')
-	        } else {
-
-	            if (props.mouseOver){
-	                className += ' over ' + (props.overClassName || '')
-	            }
-
-	            if (props.active){
-	                className += ' active ' + (props.activeClassName || '')
-	            }
-
-	            if (props.expanded){
-	                className += ' expanded ' + (props.expandedClassName || '')
-	            }
-	        }
-
-	        return className
-	    },
-
-	    prepareStyle: function(props) {
-	        var style = {}
-
-	        assign(style, props.defaultStyle, props.style)
-
-	        if (props.disabled){
-
-	            assign(style, props.defaultDisabledStyle, props.disabledStyle)
-
-	        } else {
-
-	            if (props.expanded){
-	                assign(style, props.defaultExpandedStyle, props.expandedStyle)
-	            }
-
-	            if (props.mouseOver){
-	                assign(style, props.defaultOverStyle, props.overStyle)
-	            }
-
-	            if (props.active){
-	                assign(style, props.defaultActiveStyle, props.activeStyle)
-	            }
-	        }
-
-	        return style
-	    }
-	})
-
-	module.exports = MenuItem
-
-/***/ },
-/* 16 */
+/* 55 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3170,13 +6797,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 17 */
+/* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var getStylePrefixed = __webpack_require__(31)
-	var properties       = __webpack_require__(32)
+	var getStylePrefixed = __webpack_require__(75)
+	var properties       = __webpack_require__(76)
 
 	module.exports = function(key, value){
 
@@ -3188,7 +6815,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 18 */
+/* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3209,12 +6836,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 19 */
+/* 58 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var getCssPrefixedValue = __webpack_require__(33)
+	var getCssPrefixedValue = __webpack_require__(77)
 
 	module.exports = function(target){
 		target.plugins = target.plugins || [
@@ -3245,7 +6872,476 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 20 */
+/* 59 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var Region = __webpack_require__(84)
+	var getConstrainRegion = __webpack_require__(33)
+
+	module.exports = function(props, subMenuRegion, targetAlignRegion, constrainTo){
+	    var constrainRegion = getConstrainRegion.call(this, constrainTo)
+
+	    if (!constrainRegion){
+	        return
+	    }
+
+
+
+	    if (typeof props.alignSubMenu === 'function'){
+	        props.alignSubMenu(subMenuRegion, targetAlignRegion, constrainRegion)
+	    } else {
+	        var pos = subMenuRegion.alignTo(targetAlignRegion, [
+	            //align to right
+	            'tl-tr','bl-br',
+
+	            //align to left
+	            'tr-tl', 'br-bl'
+	        ], { constrain: constrainRegion })
+
+	        return (pos == 'tl-tr' || pos == 'tr-tl')?
+	                    //align downwards
+	                    1:
+
+	                    //align upwards
+	                    -1
+	    }
+	}
+
+/***/ },
+/* 60 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {module.exports = 'ontouchstart' in global || (global.DocumentTouch && document instanceof DocumentTouch)
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 61 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function curry(fn, n){
+
+	    if (typeof n !== 'number'){
+	        n = fn.length
+	    }
+
+	    function getCurryClosure(prevArgs){
+
+	        function curryClosure() {
+
+	            var len  = arguments.length
+	            var args = [].concat(prevArgs)
+
+	            if (len){
+	                args.push.apply(args, arguments)
+	            }
+
+	            if (args.length < n){
+	                return getCurryClosure(args)
+	            }
+
+	            return fn.apply(this, args)
+	        }
+
+	        return curryClosure
+	    }
+
+	    return getCurryClosure([])
+	}
+
+	module.exports = curry
+
+/***/ },
+/* 62 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var proto = Element.prototype
+
+	var nativeMatches = proto.matches ||
+	  proto.mozMatchesSelector ||
+	  proto.msMatchesSelector ||
+	  proto.oMatchesSelector ||
+	  proto.webkitMatchesSelector
+
+	module.exports = nativeMatches
+
+
+/***/ },
+/* 63 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	function curry(fn, n){
+
+	    if (typeof n !== 'number'){
+	        n = fn.length
+	    }
+
+	    function getCurryClosure(prevArgs){
+
+	        function curryClosure() {
+
+	            var len  = arguments.length
+	            var args = [].concat(prevArgs)
+
+	            if (len){
+	                args.push.apply(args, arguments)
+	            }
+
+	            if (args.length < n){
+	                return getCurryClosure(args)
+	            }
+
+	            return fn.apply(this, args)
+	        }
+
+	        return curryClosure
+	    }
+
+	    return getCurryClosure([])
+	}
+
+	module.exports = curry
+
+/***/ },
+/* 64 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	function composeTwo(f, g) {
+	    return function () {
+	        return f(g.apply(this, arguments))
+	    }
+	}
+
+	/*
+	 * @param {Function...} an enumeration of functions, each consuming the result of the following function.
+	 *
+	 * For example: compose(c, b, a)(1,4) == c(b(a(1,4)))
+	 *
+	 * @return the result of the first function in the enumeration
+	 */
+	module.exports = function(){
+
+	    var args = arguments
+	    var len  = args.length
+	    var i    = 0
+	    var f    = args[0]
+
+	    while (++i < len) {
+	        f = composeTwo(f, args[i])
+	    }
+
+	    return f
+	}
+
+/***/ },
+/* 65 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	function chain(where, fn, secondFn){
+
+	    return function(){
+	        if (where === 'before'){
+	            secondFn.apply(this, arguments)
+	        }
+
+	        var result = fn.apply(this, arguments)
+
+	        if (where !== 'before'){
+	            secondFn.apply(this, arguments)
+	        }
+
+	        return result
+	    }
+	}
+
+	module.exports = chain
+
+/***/ },
+/* 66 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use once'
+
+	function once(fn, scope){
+
+	    var called
+	    var result
+
+	    return function(){
+	        if (called){
+	            return result
+	        }
+
+	        called = true
+
+	        return result = fn.apply(scope || this, arguments)
+	    }
+	}
+
+	module.exports = once
+
+/***/ },
+/* 67 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	var SLICE = Array.prototype.slice
+
+	module.exports = function(fn, args){
+	    return function(){
+	        var thisArgs = SLICE.call(args || [])
+
+	        if (arguments.length){
+	            thisArgs.push.apply(thisArgs, arguments)
+	        }
+
+	        return fn.apply(this, thisArgs)
+	    }
+	}
+
+/***/ },
+/* 68 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	var SLICE = Array.prototype.slice
+	var bindArgsArray = __webpack_require__(67)
+
+	module.exports = function(fn){
+	    return bindArgsArray(fn, SLICE.call(arguments,1))
+	}
+
+/***/ },
+/* 69 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	var SLICE = Array.prototype.slice
+
+	module.exports = function(fn, args){
+
+	    return function(){
+	        if (!Array.isArray(args)){
+	            args = SLICE.call(args || [])
+	        }
+
+	        return fn.apply(this, args)
+	    }
+	}
+
+/***/ },
+/* 70 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	var SLICE = Array.prototype.slice
+	var lockArgsArray = __webpack_require__(69)
+
+	module.exports = function(fn){
+	    return lockArgsArray(fn, SLICE.call(arguments, 1))
+	}
+
+/***/ },
+/* 71 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	var curry = __webpack_require__(63)
+
+	module.exports = curry(function(fn, value){
+	    return value != undefined && typeof value.map?
+	            value.map(fn):
+	            fn(value)
+	})
+
+/***/ },
+/* 72 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	var curry = __webpack_require__(63)
+
+	module.exports = curry(function(prop, value){
+	    return value != undefined? value[prop]: undefined
+	})
+
+/***/ },
+/* 73 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	var SLICE = Array.prototype.slice
+	var curry = __webpack_require__(63)
+
+	module.exports = function(fn, count){
+	    return function(){
+	        return fn.apply(this, SLICE.call(arguments, 0, count))
+	    }
+	}
+
+/***/ },
+/* 74 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	var newify = __webpack_require__(82)
+	var curry  = __webpack_require__(63)
+
+	module.exports = curry(newify)
+
+/***/ },
+/* 75 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var toUpperFirst = __webpack_require__(88)
+	var getPrefix    = __webpack_require__(85)
+	var el           = __webpack_require__(87)
+
+	var MEMORY = {}
+	var STYLE = el.style
+
+	module.exports = function(key, value){
+
+	    var k = key// + ': ' + value
+
+	    if (MEMORY[k]){
+	        return MEMORY[k]
+	    }
+
+	    var prefix
+	    var prefixed
+
+	    if (!(key in STYLE)){//we have to prefix
+
+	        prefix = getPrefix('appearance')
+
+	        if (prefix){
+	            prefixed = prefix + toUpperFirst(key)
+
+	            if (prefixed in STYLE){
+	                key = prefixed
+	            }
+	        }
+	    }
+
+	    MEMORY[k] = key
+
+	    return key
+	}
+
+/***/ },
+/* 76 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	module.exports = {
+	  'alignItems': 1,
+	  'justifyContent': 1,
+	  'flex': 1,
+	  'flexFlow': 1,
+
+	  'userSelect': 1,
+	  'transform': 1,
+	  'transition': 1,
+	  'transformOrigin': 1,
+	  'transformStyle': 1,
+	  'transitionProperty': 1,
+	  'transitionDuration': 1,
+	  'transitionTimingFunction': 1,
+	  'transitionDelay': 1,
+	  'borderImage': 1,
+	  'borderImageSlice': 1,
+	  'boxShadow': 1,
+	  'backgroundClip': 1,
+	  'backfaceVisibility': 1,
+	  'perspective': 1,
+	  'perspectiveOrigin': 1,
+	  'animation': 1,
+	  'animationDuration': 1,
+	  'animationName': 1,
+	  'animationDelay': 1,
+	  'animationDirection': 1,
+	  'animationIterationCount': 1,
+	  'animationTimingFunction': 1,
+	  'animationPlayState': 1,
+	  'animationFillMode': 1,
+	  'appearance': 1
+	}
+
+/***/ },
+/* 77 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var getPrefix     = __webpack_require__(85)
+	var forcePrefixed = __webpack_require__(86)
+	var el            = __webpack_require__(87)
+
+	var MEMORY = {}
+	var STYLE = el.style
+
+	module.exports = function(key, value){
+
+	    var k = key + ': ' + value
+
+	    if (MEMORY[k]){
+	        return MEMORY[k]
+	    }
+
+	    var prefix
+	    var prefixed
+	    var prefixedValue
+
+	    if (!(key in STYLE)){
+
+	        prefix = getPrefix('appearance')
+
+	        if (prefix){
+	            prefixed = forcePrefixed(key, value)
+
+	            prefixedValue = '-' + prefix.toLowerCase() + '-' + value
+
+	            if (prefixed in STYLE){
+	                el.style[prefixed] = ''
+	                el.style[prefixed] = prefixedValue
+
+	                if (el.style[prefixed] !== ''){
+	                    value = prefixedValue
+	                }
+	            }
+	        }
+	    }
+
+	    MEMORY[k] = value
+
+	    return value
+	}
+
+/***/ },
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3263,7 +7359,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 21 */
+/* 79 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3295,13 +7391,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 22 */
+/* 80 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var hasOwn   = __webpack_require__(34)
-	var VALIDATE = __webpack_require__(21)
+	var hasOwn   = __webpack_require__(81)
+	var VALIDATE = __webpack_require__(79)
 
 	module.exports = function(REGION){
 
@@ -3514,675 +7610,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 23 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var Menu         = __webpack_require__(12)
-	var MenuItemCell = __webpack_require__(13)
-	var renderCell   = __webpack_require__(39)
-	var cloneWithProps = __webpack_require__(3)
-
-	module.exports = function(props) {
-
-	    var children = []
-	    var menu
-
-	    React.Children.forEach(props.children, function(child){
-	        if (child.props.isMenu){
-	            menu = cloneWithProps(child, {
-	                ref: 'subMenu'
-	            })
-	            menu.props.subMenu = true
-	            return
-	        }
-
-	        child = cloneWithProps(child, {
-	            style: props.cellStyle
-	        })
-
-	        children.push(child)
-	    })
-
-	    if (menu){
-	        props.menu = menu
-	        children.push(React.createElement(MenuItemCell, {expander: props.expander || true}))
-	    }
-
-	    return children
-	}
-
-/***/ },
-/* 24 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var Region = __webpack_require__(6)
-	var selectParent = __webpack_require__(37)
-
-	module.exports = function(constrainTo){
-	    var constrainRegion
-
-	    if (constrainTo === true){
-	        constrainRegion = Region.getDocRegion()
-	    }
-
-	    if (!constrainRegion && typeof constrainTo === 'string'){
-	        var parent = selectParent(constrainTo, this.getDOMNode())
-	        constrainRegion = Region.from(parent)
-	    }
-
-	    if (!constrainRegion && typeof constrainTo === 'function'){
-	        constrainRegion = Region.from(constrainTo())
-	    }
-
-	    return constrainRegion
-	}
-
-/***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var assign = __webpack_require__(2)
-
-	module.exports = function(props, state){
-
-	    var itemStyle         = assign({}, props.defaultItemStyle, props.itemStyle)
-	    var itemOverStyle     = assign({}, props.defaultItemOverStyle, props.itemOverStyle)
-	    var itemActiveStyle   = assign({}, props.defaultItemActiveStyle, props.itemActiveStyle)
-	    var itemDisabledStyle = assign({}, props.defaultItemDisabledStyle, props.itemDisabledStyle)
-	    var itemExpandedStyle = assign({}, props.defaultItemExpandedStyle, props.itemExpandedStyle)
-	    var cellStyle     = assign({}, props.defaultCellStyle, props.cellStyle)
-
-	    return {
-	        itemStyle        : itemStyle,
-	        itemOverStyle    : itemOverStyle,
-	        itemActiveStyle  : itemActiveStyle,
-	        itemDisabledStyle: itemDisabledStyle,
-	        itemExpandedStyle: itemExpandedStyle,
-	        cellStyle        : cellStyle
-	    }
-	}
-
-/***/ },
-/* 26 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var Region           = __webpack_require__(6)
-	var assign           = __webpack_require__(2)
-	var cloneWithProps   = __webpack_require__(3)
-	var getPositionStyle = __webpack_require__(40)
-
-	module.exports = function(props, state) {
-	    var menu = state.menu
-
-	    if (menu && this.isMounted()){
-
-	        var style = getPositionStyle.call(this, props, state)
-
-	        menu = cloneWithProps(menu, assign({
-	            ref          : 'subMenu',
-	            subMenu      : true,
-	            maxHeight    : state.subMenuMaxHeight,
-	            onActivate   : this.onSubMenuActivate,
-	            onInactivate : this.onSubMenuInactivate,
-	            scrollerProps: props.scrollerProps,
-	            constrainTo  : props.constrainTo,
-	            expander     : props.expander
-	        }, props.itemStyleProps))
-
-	        return React.createElement("div", {ref: "subMenuWrap", style: style, 
-	                onMouseEnter: this.handleSubMenuMouseEnter, 
-	                onMouseLeave: this.handleSubMenuMouseLeave
-	            }, menu)
-	    }
-	}
-
-/***/ },
-/* 27 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var React = __webpack_require__(1)
-	var MenuItemCell = __webpack_require__(13)
-
-	var cloneWithProps = __webpack_require__(3)
-	var assign         = __webpack_require__(2)
-
-	function emptyFn(){}
-
-	module.exports = function(props, state) {
-
-	    var expandedIndex  = state.itemProps?
-	                            state.itemProps.index:
-	                            -1
-
-	    var children     = props.children
-	    var maxCellCount = 1
-	    var menuItems    = []
-
-	    React.Children.map(children, function(item){
-	        var itemProps = item.props
-
-	        menuItems.push(item)
-
-	        if (!itemProps || !itemProps.isMenuItem){
-	            return
-	        }
-
-	        var count = React.Children.count(itemProps.children)
-
-	        maxCellCount = Math.max(maxCellCount, count)
-	    })
-
-	    var itemStyleProps = props.itemStyleProps
-	    var i = -1
-	    var result = menuItems.map(function(item, index){
-	        var itemProps = item.props
-
-	        if (itemProps.isMenuItem){
-	            i++
-
-	            itemProps.onMenuItemMouseOver = this.onMenuItemMouseOver
-	            itemProps.onMenuItemMouseOut  = this.onMenuItemMouseOut
-	        }
-
-	        var children = React.Children.map(itemProps.children, function(c){ return c })
-	        var count    = React.Children.count(children)
-
-	        if (count < maxCellCount){
-	            children = children? [children]: []
-	        }
-
-	        while (count < maxCellCount){
-	            count++
-	            children.push(React.createElement(MenuItemCell, null))
-	        }
-
-	        var onClick = itemProps.onClick || emptyFn
-
-	        return cloneWithProps(item, assign({
-	            itemIndex: i,
-	            key      : index,
-	            index    : index,
-	            expanded : expandedIndex == index,
-	            children : children,
-	            expander : props.expander,
-	            onClick  : function(props, index, event){
-	                onClick.apply(null, arguments)
-	                this.onMenuItemClick(props, index, event)
-	            }.bind(this)
-	        }, {
-	            style        : itemStyleProps.itemStyle,
-	            overStyle    : itemStyleProps.itemOverStyle,
-	            activeStyle  : itemStyleProps.itemActiveStyle,
-	            disabledStyle: itemStyleProps.itemDisabledStyle,
-	            expandedStyle: itemStyleProps.itemExpandedStyle,
-	            cellStyle    : itemStyleProps.cellStyle
-	        }))
-
-	    }, this)
-
-	    return result
-	}
-
-/***/ },
-/* 28 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var React  = __webpack_require__(1)
-	var assign = __webpack_require__(2)
-
-	var renderCells     = __webpack_require__(41)
-	var MenuItem        = __webpack_require__(15)
-	var MenuItemFactory = React.createFactory(MenuItem)
-	var MenuSeparator   = __webpack_require__(14)
-
-	module.exports = function(props, state, item, index) {
-
-	    var expandedIndex = state.itemProps?
-	                            state.itemProps.index:
-	                            -1
-
-	    if (item === '-'){
-	        return React.createElement(MenuSeparator, {key: index})
-	    }
-
-	    var className   = [props.itemClassName, item.cls, item.className]
-	                        .filter(function(x)  {return !!x;})
-	                        .join(' ')
-
-	    var itemProps = assign({
-	        className  : className,
-	        key        : index,
-	        data       : item,
-	        columns    : props.columns,
-	        expanded   : index === expandedIndex,
-	        disabled   : item.disabled,
-	        onClick    : item.onClick || item.fn
-	    }, props.itemStyleProps)
-
-	    itemProps.children = renderCells(itemProps)
-
-	    if (item.items){
-	        var Menu = __webpack_require__(12)
-	        itemProps.children.push(React.createElement(Menu, {items: item.items}))
-	    }
-
-	    return (props.itemFactory || MenuItemFactory)(itemProps)
-	}
-
-/***/ },
-/* 29 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var React = __webpack_require__(1)
-
-	module.exports = {
-	    items      : React.PropTypes.array,
-	    columns    : React.PropTypes.array,
-	    onMount    : React.PropTypes.func,
-
-	    defaultRowActiveStyle: React.PropTypes.object,
-	    defaultRowOverStyle  : React.PropTypes.object,
-	    defaultRowStyle      : React.PropTypes.object,
-
-	    rowActiveStyle: React.PropTypes.object,
-	    rowOverStyle  : React.PropTypes.object,
-	    rowStyle      : React.PropTypes.object,
-
-	    cellStyle  : React.PropTypes.object
-	}
-
-/***/ },
-/* 30 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict'
-
-	var assign   = __webpack_require__(2)
-	var Scroller = __webpack_require__(42)
-	var F        = __webpack_require__(47)
-	var buffer   = F.buffer
-
-	function stop(event){
-	    event.preventDefault()
-	    event.stopPropagation()
-	}
-
-	module.exports = React.createClass({
-
-	    displayName: 'ReactMenuScrollContainer',
-
-	    getInitialState: function(){
-	        return {
-	            adjustScroll: true,
-	            scrollPos: 0
-	        }
-	    },
-
-	    getDefaultProps: function() {
-	        return {
-	            scrollStep : 5,
-	            scrollSpeed: 50
-	        }
-	    },
-
-	    componentWillUnmount: function(){
-	        if (this.props.enableScroll){
-	            window.removeEventListener('resize', this.onResizeListener)
-	        }
-	    },
-
-	    componentDidMount: function(){
-	        if (this.props.enableScroll){
-	            setTimeout(function(){
-	                // debugger
-	                this.adjustScroll()
-
-	                window.addEventListener('resize', this.onResizeListener = buffer(this.onWindowResize, this.props.onWindowResizeBuffer, this))
-	            }.bind(this), 0)
-	        }
-	    },
-
-	    componentDidUpdate: function(){
-	        this.props.enableScroll && this.adjustScroll()
-	    },
-
-	    onWindowResize: function(){
-	        this.adjustScroll()
-	        this.doScroll(0)
-	    },
-
-	    render: function(){
-
-	        var props = this.props
-	        var children = props.children
-
-	        if (!props.enableScroll){
-	            return children
-	        }
-
-	        var scrollStyle = {
-	            position: 'relative'
-	        }
-
-	        if (this.state.scrollPos){
-	            scrollStyle.top = -this.state.scrollPos
-	        }
-
-	        var containerStyle = {
-	            position: 'relative',
-	            overflow: 'hidden'
-	        }
-
-	        if (props.maxHeight){
-	            containerStyle.maxHeight = props.maxHeight
-	        }
-
-	        return React.createElement("div", {
-	            onMouseEnter: props.onMouseEnter, 
-	            onMouseLeave: props.onMouseLeave, 
-	            className: "z-menu-scroll-container", 
-	            style: containerStyle
-	        }, 
-	            React.createElement("div", {ref: "tableWrap", style: scrollStyle}, 
-	                children
-	            ), 
-	            this.renderScroller(props, -1), 
-	            this.renderScroller(props, 1)
-	        )
-	    },
-
-	    renderScroller: function(props, direction) {
-
-	        var onMouseDown = direction == -1?
-	                            this.handleScrollTop:
-	                            this.handleScrollBottom
-
-	        var onDoubleClick = direction == -1?
-	                                this.handleScrollTopMax:
-	                                this.handleScrollBottomMax
-
-	        var visible = direction == -1?
-	                            this.state.hasTopScroll:
-	                            this.state.hasBottomScroll
-
-	        var scrollerProps = assign({}, props.scrollerProps, {
-	            visible    : visible,
-	            side       : direction == -1? 'top': 'bottom',
-	            onMouseDown: onMouseDown,
-	            onDoubleClick: onDoubleClick
-	        })
-
-	        return React.createElement(Scroller, React.__spread({},  scrollerProps))
-	    },
-
-	    adjustScroll: function(){
-	        if (!this.props.enableScroll){
-	            return
-	        }
-
-	        if (!this.state.adjustScroll){
-	            this.state.adjustScroll = true
-	            return
-	        }
-
-	        var availableHeight = this.getAvailableHeight()
-	        var tableHeight      = this.getCurrentTableHeight()
-
-	        var state = {
-	            adjustScroll  : false,
-	            hasTopScroll : false,
-	            hasBottomScroll: false
-	        }
-
-	        if (tableHeight > availableHeight){
-	            state.maxScrollPos    = tableHeight - availableHeight
-	            state.hasTopScroll    = this.state.scrollPos !== 0
-	            state.hasBottomScroll = this.state.scrollPos != state.maxScrollPos
-	        } else {
-	            state.maxScrollPos = 0
-	            state.scrollPos    = 0
-	        }
-
-	        this.setState(state)
-	    },
-
-	    getAvailableHeight: function() {
-	        return this.getAvailableSizeDOM().clientHeight
-	    },
-
-	    getAvailableSizeDOM: function() {
-	        return this.getDOMNode()
-	    },
-
-	    getCurrentTableHeight: function() {
-	        return this.getCurrentSizeDOM().clientHeight
-	    },
-
-	    getCurrentSizeDOM: function() {
-	        return this.refs.tableWrap.getDOMNode()
-	    },
-
-	    handleScrollTop: function(event){
-	        event.preventDefault()
-	        this.handleScroll(-1)
-	    },
-
-	    handleScrollBottom: function(event){
-	        event.preventDefault()
-	        this.handleScroll(1)
-	    },
-
-	    handleScrollTopMax: function(event){
-	        stop(event)
-	        this.handleScrollMax(-1)
-	    },
-
-	    handleScrollBottomMax: function(event){
-	        stop(event)
-	        this.handleScrollMax(1)
-	    },
-
-	    handleScrollMax: function(direction){
-	        var maxPos = direction == -1?
-	                        0:
-	                        this.state.maxScrollPos
-
-	        this.setScrollPosition(maxPos)
-	    },
-
-	    handleScroll: function(direction /*1 to bottom, -1 to up*/){
-	        var mouseUpListener = function(){
-	            this.stopScroll()
-	            window.removeEventListener('mouseup', mouseUpListener)
-	        }.bind(this)
-
-	        window.addEventListener('mouseup', mouseUpListener)
-
-	        this.scrollInterval = setInterval(this.doScroll.bind(this, direction), this.props.scrollSpeed)
-	    },
-
-	    doScroll: function(direction){
-	        this.setState({
-	            scrollDirection: direction
-	        })
-
-	        var newScrollPos = this.state.scrollPos + direction * this.props.scrollStep
-
-	        this.setScrollPosition(newScrollPos)
-	    },
-
-	    setScrollPosition: function(scrollPos){
-	        if (scrollPos > this.state.maxScrollPos){
-	            scrollPos = this.state.maxScrollPos
-	        }
-
-	        if (scrollPos < 0){
-	            scrollPos = 0
-	        }
-
-	        this.setState({
-	            scrollPos: scrollPos,
-	            scrolling : true
-	        })
-	    },
-
-	    stopScroll: function(){
-	        clearInterval(this.scrollInterval)
-
-	        this.setState({
-	            scrolling: false
-	        })
-	    }
-	})
-
-/***/ },
-/* 31 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var toUpperFirst = __webpack_require__(43)
-	var getPrefix    = __webpack_require__(44)
-	var el           = __webpack_require__(45)
-
-	var MEMORY = {}
-	var STYLE = el.style
-
-	module.exports = function(key, value){
-
-	    var k = key// + ': ' + value
-
-	    if (MEMORY[k]){
-	        return MEMORY[k]
-	    }
-
-	    var prefix
-	    var prefixed
-
-	    if (!(key in STYLE)){//we have to prefix
-
-	        prefix = getPrefix('appearance')
-
-	        if (prefix){
-	            prefixed = prefix + toUpperFirst(key)
-
-	            if (prefixed in STYLE){
-	                key = prefixed
-	            }
-	        }
-	    }
-
-	    MEMORY[k] = key
-
-	    return key
-	}
-
-/***/ },
-/* 32 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	module.exports = {
-	  'alignItems': 1,
-	  'justifyContent': 1,
-	  'flex': 1,
-	  'flexFlow': 1,
-
-	  'userSelect': 1,
-	  'transform': 1,
-	  'transition': 1,
-	  'transformOrigin': 1,
-	  'transformStyle': 1,
-	  'transitionProperty': 1,
-	  'transitionDuration': 1,
-	  'transitionTimingFunction': 1,
-	  'transitionDelay': 1,
-	  'borderImage': 1,
-	  'borderImageSlice': 1,
-	  'boxShadow': 1,
-	  'backgroundClip': 1,
-	  'backfaceVisibility': 1,
-	  'perspective': 1,
-	  'perspectiveOrigin': 1,
-	  'animation': 1,
-	  'animationDuration': 1,
-	  'animationName': 1,
-	  'animationDelay': 1,
-	  'animationDirection': 1,
-	  'animationIterationCount': 1,
-	  'animationTimingFunction': 1,
-	  'animationPlayState': 1,
-	  'animationFillMode': 1,
-	  'appearance': 1
-	}
-
-/***/ },
-/* 33 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var getPrefix     = __webpack_require__(44)
-	var forcePrefixed = __webpack_require__(46)
-	var el            = __webpack_require__(45)
-
-	var MEMORY = {}
-	var STYLE = el.style
-
-	module.exports = function(key, value){
-
-	    var k = key + ': ' + value
-
-	    if (MEMORY[k]){
-	        return MEMORY[k]
-	    }
-
-	    var prefix
-	    var prefixed
-	    var prefixedValue
-
-	    if (!(key in STYLE)){
-
-	        prefix = getPrefix('appearance')
-
-	        if (prefix){
-	            prefixed = forcePrefixed(key, value)
-
-	            prefixedValue = '-' + prefix.toLowerCase() + '-' + value
-
-	            if (prefixed in STYLE){
-	                el.style[prefixed] = ''
-	                el.style[prefixed] = prefixedValue
-
-	                if (el.style[prefixed] !== ''){
-	                    value = prefixedValue
-	                }
-	            }
-	        }
-	    }
-
-	    MEMORY[k] = value
-
-	    return value
-	}
-
-/***/ },
-/* 34 */
+/* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict'
@@ -4225,7 +7653,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	})
 
 /***/ },
-/* 35 */
+/* 82 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var getInstantiatorFunction = __webpack_require__(92)
+
+	module.exports = function(fn, args){
+		return getInstantiatorFunction(args.length)(fn, args)
+	}
+
+/***/ },
+/* 83 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -4532,1517 +7970,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 36 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var getInstantiatorFunction = __webpack_require__(48)
-
-	module.exports = function(fn, args){
-		return getInstantiatorFunction(args.length)(fn, args)
-	}
-
-/***/ },
-/* 37 */
+/* 84 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var curry   = __webpack_require__(49)
-	var matches = __webpack_require__(50)
+	var Region = __webpack_require__(43)
 
-	module.exports = curry(function(selector, node){
-	    while (node = node.parentElement){
-	        if (matches.call(node, selector)){
-	            return node
-	        }
-	    }
-	})
+	__webpack_require__(89)
+	__webpack_require__(90)
 
-/***/ },
-/* 38 */
-/***/ function(module, exports, __webpack_require__) {
-
-	//http://www.blackpawn.com/texts/pointinpoly/
-	module.exports = function pointInTriangle(point, triangle) {
-	    //compute vectors & dot products
-	    var cx = point[0], cy = point[1],
-	        t0 = triangle[0], t1 = triangle[1], t2 = triangle[2],
-	        v0x = t2[0]-t0[0], v0y = t2[1]-t0[1],
-	        v1x = t1[0]-t0[0], v1y = t1[1]-t0[1],
-	        v2x = cx-t0[0], v2y = cy-t0[1],
-	        dot00 = v0x*v0x + v0y*v0y,
-	        dot01 = v0x*v1x + v0y*v1y,
-	        dot02 = v0x*v2x + v0y*v2y,
-	        dot11 = v1x*v1x + v1y*v1y,
-	        dot12 = v1x*v2x + v1y*v2y
-
-	    // Compute barycentric coordinates
-	    var b = (dot00 * dot11 - dot01 * dot01),
-	        inv = b === 0 ? 0 : (1 / b),
-	        u = (dot11*dot02 - dot01*dot12) * inv,
-	        v = (dot00*dot12 - dot01*dot02) * inv
-	    return u>=0 && v>=0 && (u+v < 1)
-	}
-
-/***/ },
-/* 39 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var assign = __webpack_require__(2)
-	var MenuItemCell = __webpack_require__(13)
-
-	module.exports = function(props, column) {
-	    var style = assign({}, props.defaultCellStyle, props.cellStyle)
-
-	    return React.createElement(MenuItemCell, {style: style}, props.data[column])
-	}
-
-/***/ },
-/* 40 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var Region = __webpack_require__(6)
-	var assign = __webpack_require__(2)
-	var align  = __webpack_require__(51)
-
-	module.exports = function getPositionStyle(props, state){
-	    if (!state.menu || !this.isMounted()){
-	        this.prevMenuIndex = -1
-	        return
-	    }
-
-	    var offset = state.menuOffset
-	    var left   = offset.left + offset.width
-	    var top    = offset.top
-
-	    var menuIndex = state.itemProps.index
-	    var sameMenu = this.prevMenuIndex == menuIndex
-
-	    if (this.aligning && !sameMenu){
-	        this.aligning = false
-	    }
-
-	    this.prevMenuIndex = menuIndex
-
-	    var style = {
-	        position     : 'absolute',
-	        visibility   : 'hidden',
-	        overflow     : 'hidden',
-	        pointerEvents: 'none',
-	        left         : left,
-	        top          : top,
-	        zIndex       : 1
-	    }
-
-	    if (!this.aligning && !sameMenu){
-	        setTimeout(function(){
-
-	            if (!this.isMounted()){
-	                return
-	            }
-
-	            var thisRegion = Region.from(this.getDOMNode())
-	            var menuItemRegion = Region.from({
-	                left  : thisRegion.left,
-	                top   : thisRegion.top + offset.top,
-	                width : offset.width,
-	                height: offset.height
-	            })
-
-	            var subMenuMounted = this.refs.subMenu && this.refs.subMenu.isMounted()
-	            if (!subMenuMounted){
-	                return
-	            }
-
-	            var subMenuRegion = Region.from(this.refs.subMenu.refs.scrollContainer.getCurrentSizeDOM())
-
-	            var initialHeight = subMenuRegion.height
-
-	            var alignPos = align(props, subMenuRegion, /* alignTo */ menuItemRegion, props.constrainTo)
-
-	            var newHeight = subMenuRegion.height
-	            var maxHeight
-
-	            if (newHeight < initialHeight){
-	                maxHeight = newHeight - props.subMenuConstrainMargin
-	            }
-
-	            if (maxHeight && alignPos == -1 /* upwards*/){
-	                subMenuRegion.top = subMenuRegion.bottom - maxHeight
-	            }
-
-	            var newLeft = subMenuRegion.left - thisRegion.left
-	            var newTop  = subMenuRegion.top  - thisRegion.top
-
-	            if (Math.abs(newLeft - left) < 5){
-	                newLeft = left
-	            }
-
-	            if (Math.abs(newTop - top) < 5){
-	                newTop = top
-	            }
-
-	            this.subMenuPosition = newLeft < 0? 'left': 'right'
-
-	            this.alignOffset = {
-	                left: newLeft,
-	                top : newTop
-	            }
-	            this.aligning = true
-
-	            this.setState({
-	                subMenuMaxHeight: maxHeight
-	            })
-
-	        }.bind(this), 0)
-	    }
-
-	    if (sameMenu || (this.aligning && this.alignOffset)){
-	        assign(style, this.alignOffset)
-	        style.visibility = 'visible'
-	        delete style.pointerEvents
-	        delete style.overflow
-	    }
-
-	    this.aligning = false
-
-	    return style
-	}
-
-/***/ },
-/* 41 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var renderCell = __webpack_require__(39)
-
-	module.exports = function(props) {
-	    return props.columns.map(renderCell.bind(null, props))
-	}
-
-/***/ },
-/* 42 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/** @jsx React.DOM */'use strict';
-
-	var React         = __webpack_require__(1)
-	var assign        = __webpack_require__(2)
-	var getArrowStyle = __webpack_require__(7)
-
-	function emptyFn(){}
-
-	var SCROLLER_STYLE = {
-	    left      : 0,
-	    right     : 0,
-	    position  : 'absolute',
-	    cursor    : 'pointer',
-	    zIndex    : 1
-	}
-
-	function generateArrowStyle(props, state, overrideStyle){
-	    var style = assign({}, overrideStyle)
-
-	    var arrowConfig = {
-	        color: style.color || props.arrowColor
-	    }
-
-	    var offset = 4
-	    var width  = style.width  || props.arrowWidth  || props.arrowSize || (props.style.height - offset)
-	    var height = style.height || props.arrowHeight || props.arrowSize || (props.style.height - offset)
-
-	    arrowConfig.width  = width
-	    arrowConfig.height = height
-
-	    assign(style, getArrowStyle(props.side == 'top'? 'up':'down', arrowConfig))
-
-	    style.display = 'inline-block'
-	    style.position = 'absolute'
-
-	    style.left = '50%'
-	    style.marginLeft = -width
-
-	    style.top = '50%'
-	    style.marginTop = -height/2
-
-	    if (state.active){
-	        style.marginTop += props.side == 'top'? -1: 1
-	    }
-
-	    return style
-	}
-
-	var Scroller = React.createClass({displayName: "Scroller",
-
-	    display: 'ReactMenuScroller',
-
-	    getInitialState: function() {
-	        return {}
-	    },
-
-	    getDefaultProps: function(){
-	        return {
-	            height: 10,
-	            defaultStyle: {
-	                background : 'white'
-	            },
-	            defaultOverStyle: {},
-	            overStyle: {},
-
-	            defaultTopStyle: {
-	                borderBottom: '1px solid gray'
-	            },
-	            topStyle: {},
-	            defaultBottomStyle: {
-	                borderTop: '1px solid gray'
-	            },
-	            bottomStyle: {},
-
-	            arrowColor: 'gray',
-
-	            arrowStyle: {},
-	            defaultArrowStyle: {},
-	            defaultArrowOverStyle: {
-	                color: 'rgb(74, 74, 74)'
-	            },
-	            arrowOverStyle: {}
-	        }
-	    },
-
-	    handleMouseEnter: function() {
-	        this.setState({
-	            mouseOver: true
-	        })
-	    },
-
-	    handleMouseLeave: function() {
-	        this.setState({
-	            mouseOver: false
-	        })
-	    },
-
-	    handleMouseDown: function(event) {
-	        this.setState({
-	            active: true
-	        })
-
-	        ;(this.props.onMouseDown || emptyFn)(event)
-	    },
-
-	    handleMouseUp: function(event) {
-	        this.setState({
-	            active: false
-	        })
-
-	        ;(this.props.onMouseUp || emptyFn)(event)
-	    },
-
-	    render: function(){
-	        var props = assign({}, this.props, {
-	            onMouseEnter: this.handleMouseEnter,
-	            onMouseLeave: this.handleMouseLeave,
-
-	            onMouseDown: this.handleMouseDown,
-	            onMouseUp  : this.handleMouseUp
-	        })
-
-	        var state = this.state
-	        var side  = props.side
-
-	        props.className = this.prepareClassName(props, state)
-
-	        props.style = this.prepareStyle(props, state)
-
-	        var arrowStyle = this.prepareArrowStyle(props, state)
-
-	        return props.factory?
-	                    props.factory(props, side):
-	                    React.createElement("div", React.__spread({},  props), 
-	                        React.createElement("div", {style: arrowStyle})
-	                    )
-	    },
-
-	    prepareStyle: function(props, state) {
-	        var defaultOverStyle
-	        var overStyle
-
-	        if (state.mouseOver){
-	            overStyle        = props.overStyle
-	            defaultOverStyle = props.defaultOverStyle
-	        }
-
-	        var defaultSideStyle = props.side == 'top'?
-	                                props.defaultTopStyle:
-	                                props.defaultBottomStyle
-	        var sideStyle = props.side == 'top'?
-	                            props.topStyle:
-	                            props.bottomStyle
-
-	        var style = assign({}, SCROLLER_STYLE,
-	                            props.defaultStyle, defaultSideStyle, defaultOverStyle,
-	                            props.style, sideStyle, overStyle)
-
-	        style.height = style.height || props.height
-	        style[props.side] = 0
-	        if (!props.visible){
-	            style.display = 'none'
-	        }
-
-	        return style
-	    },
-
-	    prepareClassName: function(props, state) {
-	        //className
-	        var className = props.className || ''
-	        className += ' z-menu-scroller ' + props.side
-
-	        if (props.active && props.visible){
-	            className += ' active'
-	        }
-
-	        return className
-	    },
-
-	    prepareArrowStyle: function(props, state) {
-
-	        var defaultArrowOverStyle
-	        var arrowOverStyle
-
-	        if (state.mouseOver){
-	            defaultArrowOverStyle = props.defaultArrowOverStyle
-	            arrowOverStyle        = props.arrowOverStyle
-	        }
-
-	        var arrowStyle = assign({}, props.defaultArrowStyle, defaultArrowOverStyle, props.arrowStyle, arrowOverStyle)
-
-	        return generateArrowStyle(props, state, arrowStyle)
-	    },
-
-	    handleClick: function(event){
-	        event.stopPropagation
-	    }
-	})
-
-	module.exports = Scroller
-
-/***/ },
-/* 43 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	module.exports = function(str){
-		return str?
-				str.charAt(0).toUpperCase() + str.slice(1):
-				''
-	}
-
-/***/ },
-/* 44 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var toUpperFirst = __webpack_require__(43)
-	var prefixes     = ["ms", "Moz", "Webkit", "O"]
-
-	var el = __webpack_require__(45)
-
-	var PREFIX
-
-	module.exports = function(key){
-
-		if (PREFIX){
-			return PREFIX
-		}
-
-		var i = 0
-		var len = prefixes.length
-		var tmp
-		var prefix
-
-		for (; i < len; i++){
-			prefix = prefixes[i]
-			tmp = prefix + toUpperFirst(key)
-
-			if (typeof el.style[tmp] != 'undefined'){
-				return PREFIX = prefix
-			}
-		}
-	}
-
-/***/ },
-/* 45 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {'use strict';
-
-	var el
-
-	if(!!global.document){
-	  	el = global.document.createElement('div')
-	}
-
-	module.exports = el
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 46 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var toUpperFirst = __webpack_require__(43)
-	var getPrefix    = __webpack_require__(44)
-	var properties   = __webpack_require__(32)
-
-	/**
-	 * Returns the given key prefixed, if the property is found in the prefixProps map.
-	 *
-	 * Does not test if the property supports the given value unprefixed.
-	 * If you need this, use './getPrefixed' instead
-	 */
-	module.exports = function(key, value){
-
-		if (!properties[key]){
-			return key
-		}
-
-		var prefix = getPrefix(key)
-
-		return prefix?
-					prefix + toUpperFirst(key):
-					key
-	}
-
-/***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
-	    var setImmediate = function(fn){
-	        setTimeout(fn, 0)
-	    }
-	    var clearImmediate = clearTimeout
-	    /**
-	     * Utility methods for working with functions.
-	     * These methods augment the Function prototype.
-	     *
-	     * Using {@link #before}
-	     *
-	     *      function log(m){
-	     *          console.log(m)
-	     *      }
-	     *
-	     *      var doLog = function (m){
-	     *          console.log('LOG ')
-	     *      }.before(log)
-	     *
-	     *      doLog('test')
-	     *      //will log
-	     *      //"LOG "
-	     *      //and then
-	     *      //"test"
-	     *
-	     *
-	     *
-	     * Using {@link #bindArgs}:
-	     *
-	     *      //returns the sum of all arguments
-	     *      function add(){
-	     *          var sum = 0
-	     *          [].from(arguments).forEach(function(n){
-	     *              sum += n
-	     *          })
-	     *
-	     *          return sum
-	     *      }
-	     *
-	     *      var add1 = add.bindArgs(1)
-	     *
-	     *      add1(2, 3) == 6
-	     *
-	     * Using {@link #lockArgs}:
-	     *
-	     *      function add(){
-	     *          var sum = 0
-	     *          [].from(arguments).forEach(function(n){
-	     *              sum += n
-	     *          })
-	     *
-	     *          return sum
-	     *      }
-	     *
-	     *      var add1_2   = add.lockArgs(1,2)
-	     *      var add1_2_3 = add.lockArgs(1,2,3)
-	     *
-	     *      add1_2(3,4)  == 3 //args are locked to only be 1 and 2
-	     *      add1_2_3(6)  == 6 //args are locked to only be 1, 2 and 3
-	     *
-	     *
-	     *
-	     * Using {@link #compose}:
-	     *
-	     *      function multiply(a,b){
-	     *          return a* b
-	     *      }
-	     *
-	     *      var multiply2 = multiply.curry()(2)
-	     *
-	     *      Function.compose(multiply2( add(5,6) )) == multiply2( add(5,6) )
-	     *
-	     *
-	     * @class Function
-	     */
-
-	    var SLICE = Array.prototype.slice
-
-	    var curry = __webpack_require__(52),
-
-	        findFn = function(fn, target, onFound){
-	            // if (typeof target.find == 'function'){
-	            //     return target.find(fn)
-	            // }
-
-	            onFound = typeof onFound == 'function'?
-	                        onFound:
-	                        function(found, key, target){
-	                            return found
-	                        }
-
-	            if (Array.isArray(target)){
-	                var i   = 0
-	                var len = target.length
-	                var it
-
-	                for(; i < len; i++){
-	                    it = target[i]
-	                    if (fn(it, i, target)){
-	                        return onFound(it, i, target)
-	                    }
-	                }
-
-	                return
-	            }
-
-	            if (typeof target == 'object'){
-	                var keys = Object.keys(target)
-	                var i = 0
-	                var len = keys.length
-	                var k
-	                var it
-
-	                for( ; i < len; i++){
-	                    k  = keys[i]
-	                    it = target[k]
-
-	                    if (fn(it, k, target)){
-	                        return onFound(it, k, target)
-	                    }
-	                }
-	            }
-	        },
-
-	        find = curry(findFn, 2),
-
-	        findIndex = curry(function(fn, target){
-	            return findFn(fn, target, function(it, i){
-	                return i
-	            })
-	        }),
-
-	        bindFunctionsOf = function(obj) {
-	            Object.keys(obj).forEach(function(k){
-	                if (typeof obj[k] == 'function'){
-	                    obj[k] = obj[k].bind(obj)
-	                }
-	            })
-
-	            return obj
-	        },
-
-	        /*
-	         * @param {Function...} an enumeration of functions, each consuming the result of the following function.
-	         *
-	         * For example: compose(c, b, a)(1,4) == c(b(a(1,4)))
-	         *
-	         * @return the result of the first function in the enumeration
-	         */
-	        compose = __webpack_require__(53),
-
-	        chain = __webpack_require__(54),
-
-	        once = __webpack_require__(55),
-
-	        bindArgsArray = __webpack_require__(56),
-
-	        bindArgs = __webpack_require__(57),
-
-	        lockArgsArray = __webpack_require__(58),
-
-	        lockArgs = __webpack_require__(59),
-
-	        skipArgs = function(fn, count){
-	            return function(){
-	                var args = SLICE.call(arguments, count || 0)
-
-	                return fn.apply(this, args)
-	            }
-	        },
-
-	        intercept = function(interceptedFn, interceptingFn, withStopArg){
-
-	            return function(){
-	                var args    = [].from(arguments),
-	                    stopArg = { stop: false }
-
-	                if (withStopArg){
-	                    args.push(stopArg)
-	                }
-
-	                var result = interceptingFn.apply(this, args)
-
-	                if (withStopArg){
-	                    if (stopArg.stop === true){
-	                        return result
-	                    }
-
-	                } else {
-	                    if (result === false){
-	                        return result
-	                    }
-	                }
-
-	                //the interception was not stopped
-	                return interceptedFn.apply(this, arguments)
-	            }
-
-	        },
-
-	        delay = function(fn, delay, scope){
-
-	            var delayIsNumber = delay * 1 == delay
-
-	            if (arguments.length == 2 && !delayIsNumber){
-	                scope = delay
-	                delay = 0
-	            } else {
-	                if (!delayIsNumber){
-	                    delay = 0
-	                }
-	            }
-
-	            return function(){
-	                var self = scope || this,
-	                    args = arguments
-
-	                if (delay < 0){
-	                    fn.apply(self, args)
-	                    return
-	                }
-
-	                if (delay || !setImmediate){
-	                    setTimeout(function(){
-	                        fn.apply(self, args)
-	                    }, delay)
-
-	                } else {
-	                    setImmediate(function(){
-	                        fn.apply(self, args)
-	                    })
-	                }
-	            }
-	        },
-
-	        defer = function(fn, scope){
-	            return delay(fn, 0, scope)
-	        },
-
-	        buffer = function(fn, delay, scope){
-
-	            var timeoutId = -1
-
-	            return function(){
-
-	                var self = scope || this,
-	                    args = arguments
-
-	                if (delay < 0){
-	                    fn.apply(self, args)
-	                    return
-	                }
-
-	                var withTimeout = delay || !setImmediate,
-	                    clearFn = withTimeout?
-	                                clearTimeout:
-	                                clearImmediate,
-	                    setFn   = withTimeout?
-	                                setTimeout:
-	                                setImmediate
-
-	                if (timeoutId !== -1){
-	                    clearFn(timeoutId)
-	                }
-
-	                timeoutId = setFn(function(){
-	                    fn.apply(self, args)
-	                    self = null
-	                }, delay)
-
-	            }
-
-	        },
-
-	        throttle = function(fn, delay, scope) {
-	            var timeoutId = -1,
-	                self,
-	                args
-
-	            return function () {
-
-	                self = scope || this
-	                args = arguments
-
-	                if (timeoutId !== -1) {
-	                    //the function was called once again in the delay interval
-	                } else {
-	                    timeoutId = setTimeout(function () {
-	                        fn.apply(self, args)
-
-	                        self = null
-	                        timeoutId = -1
-	                    }, delay)
-	                }
-
-	            }
-
-	        },
-
-	        spread = function(fn, delay, scope){
-
-	            var timeoutId       = -1
-	            var callCount       = 0
-	            var executeCount    = 0
-	            var nextArgs        = {}
-	            var increaseCounter = true
-	            var resultingFnUnbound
-	            var resultingFn
-
-	            resultingFn = resultingFnUnbound = function(){
-
-	                var args = arguments,
-	                    self = scope || this
-
-	                if (increaseCounter){
-	                    nextArgs[callCount++] = {args: args, scope: self}
-	                }
-
-	                if (timeoutId !== -1){
-	                    //the function was called once again in the delay interval
-	                } else {
-	                    timeoutId = setTimeout(function(){
-	                        fn.apply(self, args)
-
-	                        timeoutId = -1
-	                        executeCount++
-
-	                        if (callCount !== executeCount){
-	                            resultingFn = bindArgsArray(resultingFnUnbound, nextArgs[executeCount].args).bind(nextArgs[executeCount].scope)
-	                            delete nextArgs[executeCount]
-
-	                            increaseCounter = false
-	                            resultingFn.apply(self)
-	                            increaseCounter = true
-	                        } else {
-	                            nextArgs = {}
-	                        }
-	                    }, delay)
-	                }
-
-	            }
-
-	            return resultingFn
-	        },
-
-	        /*
-	         * @param {Array} args the array for which to create a cache key
-	         * @param {Number} [cacheParamNumber] the number of args to use for the cache key. Use this to limit the args that area actually used for the cache key
-	         */
-	        getCacheKey = function(args, cacheParamNumber){
-	            if (cacheParamNumber == null){
-	                cacheParamNumber = -1
-	            }
-
-	            var i        = 0,
-	                len      = Math.min(args.length, cacheParamNumber),
-	                cacheKey = [],
-	                it
-
-	            for ( ; i < len; i++){
-	                it = args[i]
-
-	                if (root.check.isPlainObject(it) || Array.isArray(it)){
-	                    cacheKey.push(JSON.stringify(it))
-	                } else {
-	                    cacheKey.push(String(it))
-	                }
-	            }
-
-	            return cacheKey.join(', ')
-	        },
-
-	        /*
-	         * @param {Function} fn - the function to cache results for
-	         * @param {Number} skipCacheParamNumber - the index of the boolean parameter that makes this function skip the caching and
-	         * actually return computed results.
-	         * @param {Function|String} cacheBucketMethod - a function or the name of a method on this object which makes caching distributed across multiple buckets.
-	         * If given, cached results will be searched into the cache corresponding to this bucket. If no result found, return computed result.
-	         *
-	         * For example this param is very useful when a function from a prototype is cached,
-	         * but we want to return the same cached results only for one object that inherits that proto, not for all objects. Thus, for example for Wes.Element,
-	         * we use the 'getId' cacheBucketMethod to indicate cached results for one object only.
-	         * @param {Function} [cacheKeyBuilder] A function to be used to compose the cache key
-	         *
-	         * @return {Function} a new function, which returns results from cache, if they are available, otherwise uses the given fn to compute the results.
-	         * This returned function has a 'clearCache' function attached, which clears the caching. If a parameter ( a bucket id) is  provided,
-	         * only clears the cache in the specified cache bucket.
-	         */
-	        cache = function(fn, config){
-	            config = config || {}
-
-	            var bucketCache = {},
-	                cache       = {},
-	                skipCacheParamNumber = config.skipCacheIndex,
-	                cacheBucketMethod    = config.cacheBucket,
-	                cacheKeyBuilder      = config.cacheKey,
-	                cacheArgsLength      = skipCacheParamNumber == null?
-	                                            fn.length:
-	                                            skipCacheParamNumber,
-	                cachingFn
-
-	            cachingFn = function(){
-	                var result,
-	                    skipCache = skipCacheParamNumber != null?
-	                                                arguments[skipCacheParamNumber] === true:
-	                                                false,
-	                    args = skipCache?
-	                                    SLICE.call(arguments, 0, cacheArgsLength):
-	                                    SLICE.call(arguments),
-
-	                    cacheBucketId = cacheBucketMethod != null?
-	                                        typeof cacheBucketMethod == 'function'?
-	                                            cacheBucketMethod():
-	                                            typeof this[cacheBucketMethod] == 'function'?
-	                                                this[cacheBucketMethod]():
-	                                                null
-	                                        :
-	                                        null,
-
-
-	                    cacheObject = cacheBucketId?
-	                                        bucketCache[cacheBucketId]:
-	                                        cache,
-
-	                    cacheKey = (cacheKeyBuilder || getCacheKey)(args, cacheArgsLength)
-
-	                if (cacheBucketId && !cacheObject){
-	                    cacheObject = bucketCache[cacheBucketId] = {}
-	                }
-
-	                if (skipCache || cacheObject[cacheKey] == null){
-	                    cacheObject[cacheKey] = result = fn.apply(this, args)
-	                } else {
-	                    result = cacheObject[cacheKey]
-	                }
-
-	                return result
-	            }
-
-	            /*
-	             * @param {String|Object|Number} [bucketId] the bucket for which to clear the cache. If none given, clears all the cache for this function.
-	             */
-	            cachingFn.clearCache = function(bucketId){
-	                if (bucketId){
-	                    delete bucketCache[String(bucketId)]
-	                } else {
-	                    cache = {}
-	                    bucketCache = {}
-	                }
-	            }
-
-	            /*
-	             *
-	             * @param {Array} cacheArgs The array of objects from which to create the cache key
-	             * @param {Number} [cacheParamNumber] A limit for the cache args that are actually used to compute the cache key.
-	             * @param {Function} [cacheKeyBuilder] The function to be used to compute the cache key from the given cacheArgs and cacheParamNumber
-	             */
-	            cachingFn.getCache = function(cacheArgs, cacheParamNumber, cacheKeyBuilder){
-	                return cachingFn.getBucketCache(null, cacheArgs, cacheParamNumber, cacheKeyBuilder)
-	            }
-
-	            /*
-	             *
-	             * @param {String} bucketId The id of the cache bucket from which to retrieve the cached value
-	             * @param {Array} cacheArgs The array of objects from which to create the cache key
-	             * @param {Number} [cacheParamNumber] A limit for the cache args that are actually used to compute the cache key.
-	             * @param {Function} [cacheKeyBuilder] The function to be used to compute the cache key from the given cacheArgs and cacheParamNumber
-	             */
-	            cachingFn.getBucketCache = function(bucketId, cacheArgs, cacheParamNumber, cacheKeyBuilder){
-	                var cacheObject = cache,
-	                    cacheKey = (cacheKeyBuilder || getCacheKey)(cacheArgs, cacheParamNumber)
-
-	                if (bucketId){
-	                    bucketId = String(bucketId);
-
-	                    cacheObject = bucketCache[bucketId] = bucketCache[bucketId] || {}
-	                }
-
-	                return cacheObject[cacheKey]
-	            }
-
-	            /*
-	             *
-	             * @param {Object} value The value to set in the cache
-	             * @param {Array} cacheArgs The array of objects from which to create the cache key
-	             * @param {Number} [cacheParamNumber] A limit for the cache args that are actually used to compute the cache key.
-	             * @param {Function} [cacheKeyBuilder] The function to be used to compute the cache key from the given cacheArgs and cacheParamNumber
-	             */
-	            cachingFn.setCache = function(value, cacheArgs, cacheParamNumber, cacheKeyBuilder){
-	                return cachingFn.setBucketCache(null, value, cacheArgs, cacheParamNumber, cacheKeyBuilder)
-	            }
-
-	            /*
-	             *
-	             * @param {String} bucketId The id of the cache bucket for which to set the cache value
-	             * @param {Object} value The value to set in the cache
-	             * @param {Array} cacheArgs The array of objects from which to create the cache key
-	             * @param {Number} [cacheParamNumber] A limit for the cache args that are actually used to compute the cache key.
-	             * @param {Function} [cacheKeyBuilder] The function to be used to compute the cache key from the given cacheArgs and cacheParamNumber
-	             */
-	            cachingFn.setBucketCache = function(bucketId, value, cacheArgs, cacheParamNumber, cacheKeyBuilder){
-
-	                var cacheObject = cache,
-	                    cacheKey = (cacheKeyBuilder || getCacheKey)(cacheArgs, cacheParamNumber)
-
-	                if (bucketId){
-	                    bucketId = String(bucketId)
-
-	                    cacheObject = bucketCache[bucketId] = bucketCache[bucketId] || {};
-	                }
-
-	                return cacheObject[cacheKey] = value
-	            }
-
-	            return cachingFn
-	        }
-
-	module.exports = {
-
-	    map: __webpack_require__(60),
-
-	    dot: __webpack_require__(61),
-
-	    maxArgs: __webpack_require__(62),
-
-	    /**
-	     * @method compose
-	     *
-	     * Example:
-	     *
-	     *      zippy.Function.compose(c, b, a)
-	     *
-	     * See {@link Function#compose}
-	     */
-	    compose: compose,
-
-	    /**
-	     * See {@link Function#self}
-	     */
-	    self: function(fn){
-	        return fn
-	    },
-
-	    /**
-	     * See {@link Function#buffer}
-	     */
-	    buffer: buffer,
-
-	    /**
-	     * See {@link Function#delay}
-	     */
-	    delay: delay,
-
-	    /**
-	     * See {@link Function#defer}
-	     * @param {Function} fn
-	     * @param {Object} scope
-	     */
-	    defer:defer,
-
-	    /**
-	     * See {@link Function#skipArgs}
-	     * @param {Function} fn
-	     * @param {Number} [count=0] how many args to skip when calling the resulting function
-	     * @return {Function} The function that will call the original fn without the first count args.
-	     */
-	    skipArgs: skipArgs,
-
-	    /**
-	     * See {@link Function#intercept}
-	     */
-	    intercept: function(fn, interceptedFn, withStopArgs){
-	        return intercept(interceptedFn, fn, withStopArgs)
-	    },
-
-	    /**
-	     * See {@link Function#throttle}
-	     */
-	    throttle: throttle,
-
-	    /**
-	     * See {@link Function#spread}
-	     */
-	    spread: spread,
-
-	    /**
-	     * See {@link Function#chain}
-	     */
-	    chain: function(fn, where, mainFn){
-	        return chain(where, mainFn, fn)
-	    },
-
-	    /**
-	     * See {@link Function#before}
-	     */
-	    before: function(fn, otherFn){
-	        return chain('before', otherFn, fn)
-	    },
-
-	    /**
-	     * See {@link Function#after}
-	     */
-	    after: function(fn, otherFn){
-	        return chain('after', otherFn, fn)
-	    },
-
-	    /**
-	     * See {@link Function#curry}
-	     */
-	    curry: curry,
-
-	    /**
-	     * See {@link Function#once}
-	     */
-	    once: once,
-
-	    /**
-	     * See {@link Function#bindArgs}
-	     */
-	    bindArgs: bindArgs,
-
-	    /**
-	     * See {@link Function#bindArgsArray}
-	     */
-	    bindArgsArray: bindArgsArray,
-
-	    /**
-	     * See {@link Function#lockArgs}
-	     */
-	    lockArgs: lockArgs,
-
-	    /**
-	     * See {@link Function#lockArgsArray}
-	     */
-	    lockArgsArray: lockArgsArray,
-
-	    bindFunctionsOf: bindFunctionsOf,
-
-	    find: find,
-
-	    findIndex: findIndex,
-
-	    newify: __webpack_require__(63)
-	}
-
-/***/ },
-/* 48 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = function(){
-
-	    'use strict';
-
-	    var fns = {}
-
-	    return function(len){
-
-	        if ( ! fns [len ] ) {
-
-	            var args = []
-	            var i    = 0
-
-	            for (; i < len; i++ ) {
-	                args.push( 'a[' + i + ']')
-	            }
-
-	            fns[len] = new Function(
-	                            'c',
-	                            'a',
-	                            'return new c(' + args.join(',') + ')'
-	                        )
-	        }
-
-	        return fns[len]
-	    }
-
-	}()
-
-/***/ },
-/* 49 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	function curry(fn, n){
-
-	    if (typeof n !== 'number'){
-	        n = fn.length
-	    }
-
-	    function getCurryClosure(prevArgs){
-
-	        function curryClosure() {
-
-	            var len  = arguments.length
-	            var args = [].concat(prevArgs)
-
-	            if (len){
-	                args.push.apply(args, arguments)
-	            }
-
-	            if (args.length < n){
-	                return getCurryClosure(args)
-	            }
-
-	            return fn.apply(this, args)
-	        }
-
-	        return curryClosure
-	    }
-
-	    return getCurryClosure([])
-	}
-
-	module.exports = curry
-
-/***/ },
-/* 50 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var proto = Element.prototype
-
-	var nativeMatches = proto.matches ||
-	  proto.mozMatchesSelector ||
-	  proto.msMatchesSelector ||
-	  proto.oMatchesSelector ||
-	  proto.webkitMatchesSelector
-
-	module.exports = nativeMatches
-
-
-/***/ },
-/* 51 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var Region = __webpack_require__(64)
-	var getConstrainRegion = __webpack_require__(24)
-
-	module.exports = function(props, subMenuRegion, targetAlignRegion, constrainTo){
-	    var constrainRegion = getConstrainRegion.call(this, constrainTo)
-
-	    if (!constrainRegion){
-	        return
-	    }
-
-
-
-	    if (typeof props.alignSubMenu === 'function'){
-	        props.alignSubMenu(subMenuRegion, targetAlignRegion, constrainRegion)
-	    } else {
-	        var pos = subMenuRegion.alignTo(targetAlignRegion, [
-	            //align to right
-	            'tl-tr','bl-br',
-
-	            //align to left
-	            'tr-tl', 'br-bl'
-	        ], { constrain: constrainRegion })
-
-	        return (pos == 'tl-tr' || pos == 'tr-tl')?
-	                    //align downwards
-	                    1:
-
-	                    //align upwards
-	                    -1
-	    }
-	}
-
-/***/ },
-/* 52 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	function curry(fn, n){
-
-	    if (typeof n !== 'number'){
-	        n = fn.length
-	    }
-
-	    function getCurryClosure(prevArgs){
-
-	        function curryClosure() {
-
-	            var len  = arguments.length
-	            var args = [].concat(prevArgs)
-
-	            if (len){
-	                args.push.apply(args, arguments)
-	            }
-
-	            if (args.length < n){
-	                return getCurryClosure(args)
-	            }
-
-	            return fn.apply(this, args)
-	        }
-
-	        return curryClosure
-	    }
-
-	    return getCurryClosure([])
-	}
-
-	module.exports = curry
-
-/***/ },
-/* 53 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	function composeTwo(f, g) {
-	    return function () {
-	        return f(g.apply(this, arguments))
-	    }
-	}
-
-	/*
-	 * @param {Function...} an enumeration of functions, each consuming the result of the following function.
-	 *
-	 * For example: compose(c, b, a)(1,4) == c(b(a(1,4)))
-	 *
-	 * @return the result of the first function in the enumeration
-	 */
-	module.exports = function(){
-
-	    var args = arguments
-	    var len  = args.length
-	    var i    = 0
-	    var f    = args[0]
-
-	    while (++i < len) {
-	        f = composeTwo(f, args[i])
-	    }
-
-	    return f
-	}
-
-/***/ },
-/* 54 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	function chain(where, fn, secondFn){
-
-	    return function(){
-	        if (where === 'before'){
-	            secondFn.apply(this, arguments)
-	        }
-
-	        var result = fn.apply(this, arguments)
-
-	        if (where !== 'before'){
-	            secondFn.apply(this, arguments)
-	        }
-
-	        return result
-	    }
-	}
-
-	module.exports = chain
-
-/***/ },
-/* 55 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use once'
-
-	function once(fn, scope){
-
-	    var called
-	    var result
-
-	    return function(){
-	        if (called){
-	            return result
-	        }
-
-	        called = true
-
-	        return result = fn.apply(scope || this, arguments)
-	    }
-	}
-
-	module.exports = once
-
-/***/ },
-/* 56 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	var SLICE = Array.prototype.slice
-
-	module.exports = function(fn, args){
-	    return function(){
-	        var thisArgs = SLICE.call(args || [])
-
-	        if (arguments.length){
-	            thisArgs.push.apply(thisArgs, arguments)
-	        }
-
-	        return fn.apply(this, thisArgs)
-	    }
-	}
-
-/***/ },
-/* 57 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	var SLICE = Array.prototype.slice
-	var bindArgsArray = __webpack_require__(56)
-
-	module.exports = function(fn){
-	    return bindArgsArray(fn, SLICE.call(arguments,1))
-	}
-
-/***/ },
-/* 58 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	var SLICE = Array.prototype.slice
-
-	module.exports = function(fn, args){
-
-	    return function(){
-	        if (!Array.isArray(args)){
-	            args = SLICE.call(args || [])
-	        }
-
-	        return fn.apply(this, args)
-	    }
-	}
-
-/***/ },
-/* 59 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	var SLICE = Array.prototype.slice
-	var lockArgsArray = __webpack_require__(58)
-
-	module.exports = function(fn){
-	    return lockArgsArray(fn, SLICE.call(arguments, 1))
-	}
-
-/***/ },
-/* 60 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	var curry = __webpack_require__(52)
-
-	module.exports = curry(function(fn, value){
-	    return value != undefined && typeof value.map?
-	            value.map(fn):
-	            fn(value)
-	})
-
-/***/ },
-/* 61 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	var curry = __webpack_require__(52)
-
-	module.exports = curry(function(prop, value){
-	    return value != undefined? value[prop]: undefined
-	})
-
-/***/ },
-/* 62 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	var SLICE = Array.prototype.slice
-	var curry = __webpack_require__(52)
-
-	module.exports = function(fn, count){
-	    return function(){
-	        return fn.apply(this, SLICE.call(arguments, 0, count))
-	    }
-	}
-
-/***/ },
-/* 63 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict'
-
-	var newify = __webpack_require__(65)
-	var curry  = __webpack_require__(52)
-
-	module.exports = curry(newify)
-
-/***/ },
-/* 64 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var Region = __webpack_require__(6)
-
-	__webpack_require__(66)
-	__webpack_require__(67)
-
-	var COMPUTE_ALIGN_REGION = __webpack_require__(68)
+	var COMPUTE_ALIGN_REGION = __webpack_require__(91)
 
 	/**
 	 * region-align module exposes methods for aligning {@link Element} and {@link Region} instances
@@ -6218,22 +8156,102 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Region
 
 /***/ },
-/* 65 */
+/* 85 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var getInstantiatorFunction = __webpack_require__(70)
+	'use strict';
 
-	module.exports = function(fn, args){
-		return getInstantiatorFunction(args.length)(fn, args)
+	var toUpperFirst = __webpack_require__(88)
+	var prefixes     = ["ms", "Moz", "Webkit", "O"]
+
+	var el = __webpack_require__(87)
+
+	var PREFIX
+
+	module.exports = function(key){
+
+		if (PREFIX){
+			return PREFIX
+		}
+
+		var i = 0
+		var len = prefixes.length
+		var tmp
+		var prefix
+
+		for (; i < len; i++){
+			prefix = prefixes[i]
+			tmp = prefix + toUpperFirst(key)
+
+			if (typeof el.style[tmp] != 'undefined'){
+				return PREFIX = prefix
+			}
+		}
 	}
 
 /***/ },
-/* 66 */
+/* 86 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var toUpperFirst = __webpack_require__(88)
+	var getPrefix    = __webpack_require__(85)
+	var properties   = __webpack_require__(76)
+
+	/**
+	 * Returns the given key prefixed, if the property is found in the prefixProps map.
+	 *
+	 * Does not test if the property supports the given value unprefixed.
+	 * If you need this, use './getPrefixed' instead
+	 */
+	module.exports = function(key, value){
+
+		if (!properties[key]){
+			return key
+		}
+
+		var prefix = getPrefix(key)
+
+		return prefix?
+					prefix + toUpperFirst(key):
+					key
+	}
+
+/***/ },
+/* 87 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {'use strict';
+
+	var el
+
+	if(!!global.document){
+	  	el = global.document.createElement('div')
+	}
+
+	module.exports = el
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 88 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	module.exports = function(str){
+		return str?
+				str.charAt(0).toUpperCase() + str.slice(1):
+				''
+	}
+
+/***/ },
+/* 89 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict'
 
-	var Region = __webpack_require__(6)
+	var Region = __webpack_require__(43)
 
 	/**
 	 * @static
@@ -6349,12 +8367,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 67 */
+/* 90 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var Region = __webpack_require__(6)
+	var Region = __webpack_require__(43)
 
 	/**
 	 *
@@ -6391,14 +8409,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 68 */
+/* 91 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict'
 
-	var ALIGN_TO_NORMALIZED = __webpack_require__(69)
+	var ALIGN_TO_NORMALIZED = __webpack_require__(93)
 
-	var Region = __webpack_require__(6)
+	var Region = __webpack_require__(43)
 
 	/**
 	 * @localdoc Given source and target regions, and the given alignments required, returns a region that is the resulting allignment.
@@ -6472,12 +8490,45 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = COMPUTE_ALIGN_REGION
 
 /***/ },
-/* 69 */
+/* 92 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = function(){
+
+	    'use strict';
+
+	    var fns = {}
+
+	    return function(len){
+
+	        if ( ! fns [len ] ) {
+
+	            var args = []
+	            var i    = 0
+
+	            for (; i < len; i++ ) {
+	                args.push( 'a[' + i + ']')
+	            }
+
+	            fns[len] = new Function(
+	                            'c',
+	                            'a',
+	                            'return new c(' + args.join(',') + ')'
+	                        )
+	        }
+
+	        return fns[len]
+	    }
+
+	}()
+
+/***/ },
+/* 93 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict'
 
-	var Region = __webpack_require__(6)
+	var Region = __webpack_require__(43)
 
 	/**
 	 *
@@ -6652,39 +8703,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	module.exports = ALIGN_TO_NORMALIZED
-
-/***/ },
-/* 70 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = function(){
-
-	    'use strict';
-
-	    var fns = {}
-
-	    return function(len){
-
-	        if ( ! fns [len ] ) {
-
-	            var args = []
-	            var i    = 0
-
-	            for (; i < len; i++ ) {
-	                args.push( 'a[' + i + ']')
-	            }
-
-	            fns[len] = new Function(
-	                            'c',
-	                            'a',
-	                            'return new c(' + args.join(',') + ')'
-	                        )
-	        }
-
-	        return fns[len]
-	    }
-
-	}()
 
 /***/ }
 /******/ ])

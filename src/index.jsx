@@ -2,8 +2,8 @@
 
 var React  = require('react')
 var assign = require('object-assign')
-var Button = require('react-button/src')
-var SplitButton = require('react-split-button/src')
+var Button = require('react-button')
+var SplitButton = require('react-split-button')
 var cloneWithProps = require('react-clonewithprops')
 
 function emptyFn(){}
@@ -79,6 +79,10 @@ var ButtonGroup = React.createClass({
 			defaultStyle = assign({}, defaultStyle, {
 				flexFlow: 'column'
 			})
+		}
+
+		if (props.block){
+			defaultStyle.display = 'flex'
 		}
 
 		var style = assign({}, defaultStyle, props.style)
@@ -194,7 +198,8 @@ var ButtonGroup = React.createClass({
 		var buttonStyle = assign({}, props.defaultCommonStyle, button.props.style, newStyle, props.commonStyle)
 
 		var newProps = {
-			style: buttonStyle
+			style: buttonStyle,
+			renderMenu: this.props.renderMenu
 		}
 
 		if (props.pressedIndex != null){
@@ -229,7 +234,7 @@ var ButtonGroup = React.createClass({
 
 })
 
-ButtonGroup.Button = Button
+ButtonGroup.Button      = Button
 ButtonGroup.SplitButton = SplitButton
 
 module.exports = ButtonGroup
