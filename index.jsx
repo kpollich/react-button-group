@@ -35,7 +35,7 @@ var App = React.createClass({
         return (
             <div className="App" style={{padding: 10}}>
                 <Button onToggle={arrowClick} label="test me"></Button>
-                <Group defaultPressedIndex={1} orientation="vertical" style={{borderRadius: 4}}>
+                <Group defaultPressedIndex={1} orientation="vertical" style={{borderRadius: 4}} commonProps={{ themed: false}}>
                     <SplitButton label="hello world!" commonStyle={{color: 'red'}} fn={clicked} arrowPosition='left' onArrowClick={arrowClick}>
                     </SplitButton>
                     <Button onToggle={arrowClick}>test me</Button>

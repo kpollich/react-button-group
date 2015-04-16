@@ -197,10 +197,10 @@ var ButtonGroup = React.createClass({
 		var buttonProps = button.props
 		var buttonStyle = assign({}, props.defaultCommonStyle, button.props.style, newStyle, props.commonStyle)
 
-		var newProps = {
+		var newProps = assign({}, this.props.commonProps, {
 			style: buttonStyle,
 			renderMenu: this.props.renderMenu
-		}
+		})
 
 		if (props.pressedIndex != null){
 			newProps.pressed  = props.pressedIndex == index

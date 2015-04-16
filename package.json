@@ -27,15 +27,18 @@
   },
   "dependencies": {
     "object-assign": "^2.0.0",
-    "react": ">=0.12.0",
-    "react-button": "^1.0.0",
+    "react": "^0.13.1",
+    "react-button": "^1.2.1",
     "react-clonewithprops": "^1.0.1",
-    "react-split-button": "^0.2.0",
-    "react-style-normalizer": "^1.0.2"
+    "react-split-button": "^1.0.0",
+    "react-style-normalizer": "^1.2.6"
+  },
+  "peerDependencies": {
+    "react": ">=0.12.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/radubrehar/react-button-group.git"
+    "url": "https://github.com/zippyui/react-button-group.git"
   },
   "keywords": [
     "button",
@@ -48,7 +51,7 @@
   "author": "Radu Brehar",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/radubrehar/react-button-group/issues"
+    "url": "https://github.com/zippyui/react-button-group/issues"
   },
-  "homepage": "https://github.com/radubrehar/react-button-group"
+  "homepage": "https://github.com/zippyui/react-button-group"
 }
