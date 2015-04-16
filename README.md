@@ -19,9 +19,10 @@ Example
 ```jsx
 var Group = require('react-button-group')
 
-<Group style={{border: '2px solid red', borderRadius: 2}}>
-	<Group.Button>Hello</Group.Button>
-	<Group.Button>world</Group.Button>
+<Group defaultPressedIndex={1} keepOnePressed style={{fontSize: 20, borderRadius: 5}}>
+    <Button>Save</Button>
+    <Button>Export</Button>
+    <Button>Import</Button>
 </Group>
 ```
 
