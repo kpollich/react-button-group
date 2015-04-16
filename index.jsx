@@ -31,27 +31,22 @@ var App = React.createClass({
             }
         ]
 
-        var x
+        var x = <Group defaultPressedIndex={1} orientation="vertical" style={{borderRadius: 4}} commonProps={{ themed: false}}>
+                    <SplitButton label="hello world!" commonStyle={{color: 'red'}} fn={clicked} arrowPosition='left' onArrowClick={arrowClick}>
+                    </SplitButton>
+                    <Button onToggle={arrowClick}>test me</Button>
+                    <SplitButton items={items} label="choose 2"></SplitButton>
+
+                </Group>
+
         return (
             <div className="App" style={{padding: 10}}>
-                <Button onToggle={arrowClick} label="test me"></Button>
-                <Group defaultPressedIndex={1} orientation="vertical" style={{borderRadius: 4}} commonProps={{ themed: false}}>
-                    <SplitButton label="hello world!" commonStyle={{color: 'red'}} fn={clicked} arrowPosition='left' onArrowClick={arrowClick}>
-                    </SplitButton>
-                    <Button onToggle={arrowClick}>test me</Button>
-                    <SplitButton items={items} label="choose 2"></SplitButton>
 
-                </Group>
-
-                <Group defaultPressedIndex={1}>
-                    <SplitButton label="hello world!" commonStyle={{color: 'red'}} fn={clicked} arrowPosition='left' onArrowClick={arrowClick}>
-                    </SplitButton>
-                    <Button onToggle={arrowClick}>test me</Button>
-                    <SplitButton items={items} label="choose 2"></SplitButton>
-
-                </Group>
-
-
+            <Group defaultPressedIndex={1} keepOnePressed style={{fontSize: 20, borderRadius: 5}}>
+                <Button>Save</Button>
+                <Button>Export</Button>
+                <Button>Import</Button>
+            </Group>
 
             </div>
         )

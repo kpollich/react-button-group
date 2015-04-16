@@ -30,6 +30,7 @@
     "react": "^0.13.1",
     "react-button": "^1.2.1",
     "react-clonewithprops": "^1.0.1",
+    "react-dropdown-button": "^1.0.10",
     "react-split-button": "^1.0.0",
     "react-style-normalizer": "^1.2.6"
   },
@@ -48,7 +49,8 @@
     "react",
     "react-component"
   ],
-  "author": "Radu Brehar",
+  "author": "ZippyUI <contact@zippyui.com>",
+  "contributors": [],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/zippyui/react-button-group/issues"

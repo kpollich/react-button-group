@@ -4,7 +4,8 @@ var React  = require('react')
 var assign = require('object-assign')
 var Button = require('react-button')
 var SplitButton = require('react-split-button')
-var cloneWithProps = require('react-clonewithprops')
+var DropDownButton = require('react-dropdown-button')
+var cloneWithProps = React.cloneElement || require('react-clonewithprops')
 
 function emptyFn(){}
 
@@ -236,5 +237,6 @@ var ButtonGroup = React.createClass({
 
 ButtonGroup.Button      = Button
 ButtonGroup.SplitButton = SplitButton
+ButtonGroup.DropDownButton = DropDownButton
 
 module.exports = ButtonGroup
